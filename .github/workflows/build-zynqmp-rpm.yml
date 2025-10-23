@@ -49,18 +49,30 @@ jobs:
           # Configure for ARM64 cross-compilation
           ./configure \
             --host=aarch64-linux-gnu \
-            --prefix=$HOME/aarch64-sysroot/usr \
+            --prefix=/usr \
             --with-shared \
             --enable-widec \
             --with-termlib \
             --without-debug \
-            --without-tests
+            --without-tests \
+            --without-progs
 
           make -j$(nproc)
 
-          # Set STRIP environment variable for install step
-          export STRIP=/usr/bin/aarch64-linux-gnu-strip
-          make install
+          # Manually copy headers and libraries to sysroot (skip progs to avoid strip issue)
+          echo "Copying ncurses headers and libraries to sysroot..."
+
+          # Copy headers
+          cp -r include/ncurses*.h $HOME/aarch64-sysroot/usr/include/ || true
+          cp -r include/curses.h $HOME/aarch64-sysroot/usr/include/ || true
+          cp -r include/term.h $HOME/aarch64-sysroot/usr/include/ || true
+          cp -r include/unctrl.h $HOME/aarch64-sysroot/usr/include/ || true
+
+          # Copy libraries
+          cp -P lib/libncurses*.so* $HOME/aarch64-sysroot/usr/lib/ || true
+          cp -P lib/libncurses*.a $HOME/aarch64-sysroot/usr/lib/ || true
+          cp -P lib/libtinfo*.so* $HOME/aarch64-sysroot/usr/lib/ || true
+          cp -P lib/libtinfo*.a $HOME/aarch64-sysroot/usr/lib/ || true
 
           # Create symlinks for non-wide version
           cd $HOME/aarch64-sysroot/usr/lib
@@ -70,8 +82,9 @@ jobs:
           ln -sf libtinfow.a libtinfo.a || true
 
           # Verify libraries
-          echo "Built libraries:"
-          ls -lh libncurses* libtinfo* || true
+          echo "Built libraries in sysroot:"
+          ls -lh $HOME/aarch64-sysroot/usr/lib/libncurses* $HOME/aarch64-sysroot/usr/lib/libtinfo* || true
+          file $HOME/aarch64-sysroot/usr/lib/libncurses*.so* || true
 
           echo "ARM64 sysroot with ncurses 6.2 (with tinfo) created at $HOME/aarch64-sysroot"
 
