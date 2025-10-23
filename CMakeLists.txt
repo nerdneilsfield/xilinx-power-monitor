@@ -258,10 +258,9 @@ set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 # RPM 包配置
 set(CPACK_RPM_PACKAGE_GROUP "Development/Libraries")
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
-set(CPACK_RPM_PACKAGE_AUTOREQ ON)
-# 移除依赖配置，让 RPM 自动检测运行时依赖
-# 或者设置为空
-set(CPACK_RPM_PACKAGE_REQUIRES "")
+# 禁用自动依赖检测以避免在非标准系统上的依赖问题
+set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
+set(CPACK_RPM_PACKAGE_AUTOPROV OFF)
 
 # 只保留 dev 组件
 set(CPACK_DEB_COMPONENT_INSTALL ON)
