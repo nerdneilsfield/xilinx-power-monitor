@@ -127,6 +127,7 @@ jobs:
                 -DBUILD_CPP_BINDINGS=ON \
                 -DBUILD_CLI=ON \
                 -DBUILD_TESTS=OFF \
+                -DUSE_EIGEN=OFF \
                 -DBUILD_EXAMPLES=OFF \
                 ..
 
