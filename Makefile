@@ -20,6 +20,10 @@ test-c: ## Run the tests
 install: ## Install the project
 	cmake --install build
 
+.PHONY: package
+package: ## Build DEB and RPM packages
+	cd build && cpack
+
 .PHONY: clean
 clean: ## Clean the project
 	rm -rf build

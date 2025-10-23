@@ -229,7 +229,7 @@ if(BUILD_EXAMPLES)
 endif()
 
 # CPack 配置部分
-set(CPACK_GENERATOR "DEB")
+set(CPACK_GENERATOR "DEB;RPM")
 set(CPACK_PACKAGE_NAME "libxlnpwmon")
 set(CPACK_PACKAGE_VENDOR "Qi Deng")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A simple power monitor for Xilinx (Development files)")
@@ -255,8 +255,26 @@ endif()
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 
+# RPM 包配置
+set(CPACK_RPM_PACKAGE_GROUP "Development/Libraries")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_REQUIRES "glibc >= 2.17")
+if(BUILD_PYTHON_BINDINGS)
+    set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, python3-devel")
+endif()
+if(BUILD_EXAMPLES AND USE_EIGEN)
+    set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, eigen3-devel")
+endif()
+if(USE_OMP)
+    set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, libomp-devel")
+endif()
+if(BUILD_CLI)
+  set(CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, ncurses-devel")
+endif()
+
 # 只保留 dev 组件
 set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_RPM_COMPONENT_INSTALL ON)
 
 # 包含 CPack 模块
 include(CPack)
