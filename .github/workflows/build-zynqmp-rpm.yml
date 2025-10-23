@@ -47,7 +47,6 @@ jobs:
           cd ncurses-6.2
 
           # Configure for ARM64 cross-compilation
-          # Set STRIP to use the correct cross-compilation strip tool
           ./configure \
             --host=aarch64-linux-gnu \
             --prefix=$HOME/aarch64-sysroot/usr \
@@ -55,10 +54,12 @@ jobs:
             --enable-widec \
             --with-termlib \
             --without-debug \
-            --without-tests \
-            STRIP=/usr/bin/aarch64-linux-gnu-strip
+            --without-tests
 
           make -j$(nproc)
+
+          # Set STRIP environment variable for install step
+          export STRIP=/usr/bin/aarch64-linux-gnu-strip
           make install
 
           # Create symlinks for non-wide version
