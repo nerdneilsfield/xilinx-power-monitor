@@ -76,14 +76,13 @@ jobs:
           fi
 
           # Create ncurses.h symlink (ncurses expects this)
-          cd $HOME/aarch64-sysroot/usr/include
-          ln -sf curses.h ncurses.h
+          ln -sf $HOME/aarch64-sysroot/usr/include/curses.h $HOME/aarch64-sysroot/usr/include/ncurses.h
 
           # Verify headers were copied
           echo "Headers in sysroot:"
           ls -la $HOME/aarch64-sysroot/usr/include/ | grep -E '(curses|ncurses|term)' || echo "Warning: No ncurses headers found"
 
-          # Copy libraries
+          # Copy libraries (still in ncurses-6.2 directory)
           echo "Available libraries:"
           ls -la lib/
 
