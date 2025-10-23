@@ -1,0 +1,39 @@
+[build-system]
+requires = ["pybind11", "setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xlnpwmon"
+version = "0.1.2"
+description = "A simple power monitor for Xilinx"
+authors = [
+    { name = "Qi Deng", email = "dengqi935@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["xilinx", "power", "monitor", "nvidia", "nvidia-xilinx", "xilinx-power-monitor"]
+dependencies = ["pybind11>=2.9.0"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",    
+    "black>=25.1.0", 
+    "build>=0.10.0",
+    "pyyaml>=6.0.2",
+    "lark>=1.2.2"
+]
+cli = [
+    "rich>=13.9.4"
+]
+
+# cibuildwheel specific configuration
+[tool.cibuildwheel]
+# Dependencies to install before building
+before-build = "pip install pybind11 setuptools wheel"
+# Test command - if testing is desired
+test-command = "python -c \"import xlnpwmon; print(dir(xlnpwmon))\""
+# Skip tests - may be slow on emulators
+test-skip = "*"
+# System packages that may be needed in manylinux containers
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"

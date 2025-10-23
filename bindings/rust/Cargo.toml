@@ -1,0 +1,53 @@
+[package]
+name = "xlnpwmon"
+version = "0.1.2"
+edition = "2021"
+authors = ["Qi Deng <dengqi935@gmail.com>"]
+description = "Rust bindings for Xilinx Power Monitor"
+license = "BSD-3-Clause"
+repository = "https://github.com/nerdneilsfield/xilinx-power-monitor"
+documentation = "https://docs.rs/xlnpwmon"
+readme = "README.md"
+keywords = ["xilinx", "nvidia", "power", "monitor", "embedded"]
+categories = ["hardware-support", "api-bindings", "embedded"]
+homepage = "https://github.com/nerdneilsfield/xilinx-power-monitor"
+rust-version = "1.60.0"
+include = [
+    "src/**/*",
+    "vendor/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "examples/**/*",
+    "tests/**/*",
+    "build.rs",
+]
+
+[dependencies]
+libc = "0.2"
+rand = "0.9.0"
+
+[build-dependencies]
+cc = "1.0"
+
+[features]
+default = []
+static = ["cc/parallel"]
+
+[lib]
+crate-type = ["rlib"]
+
+[dev-dependencies]
+ndarray = "0.16.1"
+
+[[example]]
+name = "matrix_multiply"
+path = "examples/matrix_multiply.rs"
+
+[[example]]
+name = "cpu_monitor"
+path = "examples/cpu_monitor.rs"
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
