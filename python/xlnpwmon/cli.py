@@ -92,6 +92,20 @@ def parse_arguments():
     return args
 
 
+# --- Helper Functions ---
+def is_ps_sensor(name: str) -> bool:
+    """Check if sensor belongs to Processing System (PS)."""
+    ps_keywords = ["VCCPSINTFP", "VCCPSINTLP", "VCCPSAUX", "VCCPSPLL",
+                   "MGTRAVCC", "MGTRAVTT", "VCCO_PSDDR_504", "VCCOPS",
+                   "VCCOPS3", "VCCPSDDDRPLL"]
+    return any(kw in name for kw in ps_keywords)
+
+def is_pl_sensor(name: str) -> bool:
+    """Check if sensor belongs to Programmable Logic (PL)."""
+    pl_keywords = ["VCCINT", "VCCBRAM", "VCCAUX", "VCC1V2",
+                   "VCC3V3", "VADJ_FMC", "MGTAVCC", "MGTAVTT"]
+    return any(kw in name for kw in pl_keywords)
+
 # --- Table Generation ---
 def generate_table(
     monitor: PowerMonitor, start_time: float, sampling_freq: int
@@ -99,71 +113,92 @@ def generate_table(
     """Generates the rich Table object with current power data."""
     table = Table(title=None, show_header=True, header_style="bold magenta")
 
-    # Define columns (no change needed here)
-    table.add_column("Sensor Name", style="dim cyan", width=18)
+    # Define columns
+    table.add_column("Sensor Name", style="dim cyan", width=20)
     table.add_column("Power (W)", justify="right", style="green")
     table.add_column("Voltage (V)", justify="right")
     table.add_column("Current (A)", justify="right")
-    table.add_column("Online", justify="center")
-    table.add_column("Status", justify="left")
 
     try:
-        # Get the latest data from the monitor - THIS RETURNS A DICT
-        data_dict = monitor.get_latest_data() # Changed variable name for clarity
+        # Get the latest data from the monitor
+        data_dict = monitor.get_latest_data()
 
         # Calculate elapsed time
         elapsed_sec = time.monotonic() - start_time
 
-        # Update table title/caption
+        # Update table title
         table.title = (
             f"Xilinx Power Monitor [Sampling: {sampling_freq} Hz | "
             f"Elapsed: {elapsed_sec:.1f} s] (Press 'Ctrl+C' to quit)"
         )
 
-        # --- FIX: Use dictionary access ---
-        # Use .get() with defaults for safer access in case keys are missing
-        total_data = data_dict.get('total', {})
-        table.add_row(
-            total_data.get('name', "Total"),
-            f"{total_data.get('power', float('nan')):.2f}", # float('nan') ensures formatting doesn't fail
-            f"{total_data.get('voltage', float('nan')):.2f}",
-            f"{total_data.get('current', float('nan')):.2f}",
-            "Yes" if total_data.get('online', False) else "No",
-            total_data.get('status', "N/A"),
-        )
-        table.add_section()
-
         sensors_list = data_dict.get('sensors', [])
-        sensor_count = data_dict.get('sensor_count', 0) # Though len(sensors_list) might be more direct
+        sensor_count = data_dict.get('sensor_count', 0)
 
         if sensors_list and sensor_count > 0:
-            # Iterate over the list of sensor dictionaries
+            # === Processing System (PS) Section ===
+            table.add_row("[bold cyan]=== Processing System (PS) ===[/bold cyan]", "", "", "")
+
             for sensor_dict in sensors_list:
-                table.add_row(
-                    sensor_dict.get('name', "Unknown"),
-                    f"{sensor_dict.get('power', float('nan')):.2f}",
-                    f"{sensor_dict.get('voltage', float('nan')):.2f}",
-                    f"{sensor_dict.get('current', float('nan')):.2f}",
-                    "Yes" if sensor_dict.get('online', False) else "No",
-                    sensor_dict.get('status', "N/A"),
-                )
+                name = sensor_dict.get('name', 'Unknown')
+                if is_ps_sensor(name) and name != "PS_TOTAL_POWER":
+                    table.add_row(
+                        f"  {name}",
+                        f"{sensor_dict.get('power', float('nan')):.2f}",
+                        f"{sensor_dict.get('voltage', float('nan')):.2f}",
+                        f"{sensor_dict.get('current', float('nan')):.2f}",
+                    )
+
+            # === Programmable Logic (PL) Section ===
+            table.add_section()
+            table.add_row("[bold magenta]=== Programmable Logic (PL) ===[/bold magenta]", "", "", "")
+
+            for sensor_dict in sensors_list:
+                name = sensor_dict.get('name', 'Unknown')
+                if is_pl_sensor(name) and name != "PL_TOTAL_POWER":
+                    table.add_row(
+                        f"  {name}",
+                        f"{sensor_dict.get('power', float('nan')):.2f}",
+                        f"{sensor_dict.get('voltage', float('nan')):.2f}",
+                        f"{sensor_dict.get('current', float('nan')):.2f}",
+                    )
+
+            # === Power Summary Section (Highlighted) ===
+            table.add_section()
+            table.add_row("[bold reverse]=== POWER SUMMARY ===[/bold reverse]", "", "", "")
+
+            for sensor_dict in sensors_list:
+                name = sensor_dict.get('name', 'Unknown')
+                power = sensor_dict.get('power', float('nan'))
+
+                if name == "PS_TOTAL_POWER":
+                    table.add_row(
+                        f"  [cyan]{name}[/cyan]",
+                        f"[cyan bold]{power:.2f}[/cyan bold]",
+                        "", ""
+                    )
+                elif name == "PL_TOTAL_POWER":
+                    table.add_row(
+                        f"  [magenta]{name}[/magenta]",
+                        f"[magenta bold]{power:.2f}[/magenta bold]",
+                        "", ""
+                    )
+                elif name == "TOTAL_POWER":
+                    table.add_row(
+                        f"  [yellow bold]{name}[/yellow bold]",
+                        f"[yellow bold]{power:.2f}[/yellow bold]",
+                        "", ""
+                    )
         else:
-            table.add_row("No individual sensor data available.", "", "", "", "", "")
-        # --- END FIX ---
+            table.add_row("No sensor data available.", "", "", "")
 
     except RuntimeError as e:
         # Handle errors from the C++ library during data fetch
-        console = Console()
-        # Avoid printing directly if inside Live context? Rich might handle this.
-        # For now, add error row to table.
-        table.add_row("[bold red]Error getting data[/bold red]", str(e), "", "", "", "")
+        table.add_row("[bold red]Error getting data[/bold red]", str(e), "", "")
 
     except Exception as e:
         # Handle other unexpected errors during table generation
-        console = Console()
-        # Avoid printing directly if inside Live context?
-        table.add_row("[bold red]Unexpected error[/bold red]", str(e), "", "", "", "")
-
+        table.add_row("[bold red]Unexpected error[/bold red]", str(e), "", "")
 
     return table
 # --- Main Execution ---

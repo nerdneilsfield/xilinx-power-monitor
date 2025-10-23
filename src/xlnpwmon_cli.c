@@ -32,8 +32,24 @@ static void signal_handler(int signum) {
     g_terminate_flag = 1;
 }
 
+// --- Helper: Check if sensor is a PS sensor ---
+static int is_ps_sensor(const char* name) {
+    return (strstr(name, "VCCPSINTFP") || strstr(name, "VCCPSINTLP") ||
+            strstr(name, "VCCPSAUX") || strstr(name, "VCCPSPLL") ||
+            strstr(name, "MGTRAVCC") || strstr(name, "MGTRAVTT") ||
+            strstr(name, "VCCO_PSDDR_504") || strstr(name, "VCCOPS") ||
+            strstr(name, "VCCOPS3") || strstr(name, "VCCPSDDDRPLL"));
+}
+
+// --- Helper: Check if sensor is a PL sensor ---
+static int is_pl_sensor(const char* name) {
+    return (strstr(name, "VCCINT") || strstr(name, "VCCBRAM") ||
+            strstr(name, "VCCAUX") || strstr(name, "VCC1V2") ||
+            strstr(name, "VCC3V3") || strstr(name, "VADJ_FMC") ||
+            strstr(name, "MGTAVCC") || strstr(name, "MGTAVTT"));
+}
+
 // --- ncurses UI Function ---
-// (No changes needed in draw_ui from the previous version, assuming it worked)
 static void draw_ui(pm_handle_t handle, int freq, double elapsed_sec)
 {
     pm_error_t err;
@@ -42,15 +58,12 @@ static void draw_ui(pm_handle_t handle, int freq, double elapsed_sec)
     int col = 0;
     char buffer[256];
 
-    // 1. Get Latest Data (Make sure C API memory is fixed!)
+    // 1. Get Latest Data
     err = pm_get_latest_data(handle, &data);
     if (err != PM_SUCCESS)
     {
-        // Be careful with ncurses functions if called rapidly after endwin potentially
-        // For simplicity, just note the error might overwrite previous screen partially
         mvprintw(row++, col, "Error getting data: %s", pm_error_string(err));
         refresh();
-        // Use nanosleep instead of usleep
         struct timespec error_sleep = {0, 500 * 1000 * 1000}; // 0.5 seconds
         nanosleep(&error_sleep, NULL);
         return;
@@ -70,36 +83,78 @@ static void draw_ui(pm_handle_t handle, int freq, double elapsed_sec)
 
     // 4. Print Table Header
     attron(A_UNDERLINE);
-    mvprintw(row++, col, "%-18s %10s %10s %10s %10s %-10s",
-             "Sensor Name", "Power (W)", "Voltage(V)", "Current(A)", "Online", "Status");
+    mvprintw(row++, col, "%-20s %10s %10s %10s",
+             "Sensor Name", "Power (W)", "Voltage(V)", "Current(A)");
     attroff(A_UNDERLINE);
 
-    // 5. Print Total Data Row
-    mvprintw(row++, col, "%-18s %10.2f %10.2f %10.2f %10s %-10s",
-             data.total.name,
-             data.total.power,
-             data.total.voltage,
-             data.total.current,
-             data.total.online ? "Yes" : "No",
-             data.total.status);
-
-    // 6. Print Individual Sensor Rows
+    // 5. Print PS Sensors Section
     if (data.sensors != NULL && data.sensor_count > 0)
     {
+        attron(A_BOLD | COLOR_PAIR(1));
+        mvprintw(row++, col, "=== Processing System (PS) ===");
+        attroff(A_BOLD | COLOR_PAIR(1));
+
         for (int i = 0; i < data.sensor_count; i++)
         {
             const pm_sensor_data_t *sensor = &data.sensors[i];
-            mvprintw(row++, col, "%-18s %10.2f %10.2f %10.2f %10s %-10s",
-                     sensor->name, sensor->power, sensor->voltage, sensor->current,
-                     sensor->online ? "Yes" : "No", sensor->status);
+            if (is_ps_sensor(sensor->name) && strcmp(sensor->name, "PS_TOTAL_POWER") != 0)
+            {
+                mvprintw(row++, col, "  %-18s %10.2f %10.2f %10.2f",
+                         sensor->name, sensor->power, sensor->voltage, sensor->current);
+            }
+        }
+
+        // 6. Print PL Sensors Section
+        row++;
+        attron(A_BOLD | COLOR_PAIR(2));
+        mvprintw(row++, col, "=== Programmable Logic (PL) ===");
+        attroff(A_BOLD | COLOR_PAIR(2));
+
+        for (int i = 0; i < data.sensor_count; i++)
+        {
+            const pm_sensor_data_t *sensor = &data.sensors[i];
+            if (is_pl_sensor(sensor->name) && strcmp(sensor->name, "PL_TOTAL_POWER") != 0)
+            {
+                mvprintw(row++, col, "  %-18s %10.2f %10.2f %10.2f",
+                         sensor->name, sensor->power, sensor->voltage, sensor->current);
+            }
+        }
+
+        // 7. Print Summary Section (Highlighted)
+        row++;
+        attron(A_BOLD | A_REVERSE);
+        mvprintw(row++, col, "=== POWER SUMMARY ===");
+        attroff(A_BOLD | A_REVERSE);
+
+        for (int i = 0; i < data.sensor_count; i++)
+        {
+            const pm_sensor_data_t *sensor = &data.sensors[i];
+            if (strcmp(sensor->name, "PS_TOTAL_POWER") == 0)
+            {
+                attron(COLOR_PAIR(1));
+                mvprintw(row++, col, "  %-18s %10.2f W", sensor->name, sensor->power);
+                attroff(COLOR_PAIR(1));
+            }
+            else if (strcmp(sensor->name, "PL_TOTAL_POWER") == 0)
+            {
+                attron(COLOR_PAIR(2));
+                mvprintw(row++, col, "  %-18s %10.2f W", sensor->name, sensor->power);
+                attroff(COLOR_PAIR(2));
+            }
+            else if (strcmp(sensor->name, "TOTAL_POWER") == 0)
+            {
+                attron(A_BOLD | COLOR_PAIR(3));
+                mvprintw(row++, col, "  %-18s %10.2f W", sensor->name, sensor->power);
+                attroff(A_BOLD | COLOR_PAIR(3));
+            }
         }
     }
     else
     {
-        mvprintw(row++, col, "No individual sensor data available.");
+        mvprintw(row++, col, "No sensor data available.");
     }
 
-    // 7. Refresh Screen (check for errors)
+    // 8. Refresh Screen
     if (refresh() == ERR) {
          mvprintw(LINES - 1, 0, "Error: ncurses refresh() failed!");
     }
@@ -171,6 +226,14 @@ int main(int argc, char* argv[]) {
     keypad(stdscr, TRUE);
     curs_set(0);
     timeout(update_interval_ms); // Set blocking timeout for getch() in ms
+
+    // Initialize colors
+    if (has_colors()) {
+        start_color();
+        init_pair(1, COLOR_CYAN, COLOR_BLACK);    // PS color
+        init_pair(2, COLOR_MAGENTA, COLOR_BLACK); // PL color
+        init_pair(3, COLOR_YELLOW, COLOR_BLACK);  // TOTAL color
+    }
 
     // --- Start Sampling Thread ---
     error = pm_start_sampling(g_handle);
