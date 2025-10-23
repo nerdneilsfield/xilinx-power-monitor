@@ -98,6 +98,24 @@ typedef struct {
 } pm_power_stats_t;
 
 /**
+ * @brief Summary power data for PS, PL and Total
+ */
+typedef struct {
+    double ps_total_power;           /**< PS total power in watts */
+    double pl_total_power;           /**< PL total power in watts */
+    double total_power;              /**< Total power in watts */
+} pm_power_summary_t;
+
+/**
+ * @brief Summary power statistics for PS, PL and Total
+ */
+typedef struct {
+    pm_stats_t ps_total_power;       /**< PS total power statistics */
+    pm_stats_t pl_total_power;       /**< PL total power statistics */
+    pm_stats_t total_power;          /**< Total power statistics */
+} pm_power_summary_stats_t;
+
+/**
  * @brief Library handle
  */
 typedef struct pm_handle_s* pm_handle_t;
@@ -213,6 +231,28 @@ pm_error_t pm_get_statistics(pm_handle_t handle, pm_power_stats_t* stats);
  * @return Error code
  */
 pm_error_t pm_reset_statistics(pm_handle_t handle);
+
+/**
+ * @brief Get power summary (PS_TOTAL_POWER, PL_TOTAL_POWER, TOTAL_POWER)
+ *
+ * This function returns the latest power values for PS, PL and Total.
+ *
+ * @param handle Library handle
+ * @param[out] summary Pointer to store the summary data
+ * @return Error code
+ */
+pm_error_t pm_get_power_summary(pm_handle_t handle, pm_power_summary_t* summary);
+
+/**
+ * @brief Get power summary statistics (PS_TOTAL_POWER, PL_TOTAL_POWER, TOTAL_POWER)
+ *
+ * This function returns the power statistics for PS, PL and Total.
+ *
+ * @param handle Library handle
+ * @param[out] summary_stats Pointer to store the summary statistics
+ * @return Error code
+ */
+pm_error_t pm_get_power_summary_stats(pm_handle_t handle, pm_power_summary_stats_t* summary_stats);
 
 /**
  * @brief Get the number of sensors

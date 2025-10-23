@@ -158,6 +158,20 @@ namespace xlnpwmon
                 void resetStatistics();
 
                 /**
+                 * @brief Get power summary (PS, PL, Total)
+                 * @return Power summary structure
+                 * @throw std::runtime_error if getting summary fails
+                 */
+                pm_power_summary_t getPowerSummary() const;
+
+                /**
+                 * @brief Get power summary statistics (PS, PL, Total)
+                 * @return Power summary statistics structure
+                 * @throw std::runtime_error if getting summary statistics fails
+                 */
+                pm_power_summary_stats_t getPowerSummaryStats() const;
+
+                /**
                  * @brief Get number of sensors
                  * @return Number of sensors
                  * @throw std::runtime_error if getting sensor count fails

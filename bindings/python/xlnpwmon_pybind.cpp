@@ -212,6 +212,53 @@ public:
     }
 
     /**
+     * @brief Get power summary (PS, PL, Total)
+     * @return Python dictionary containing power summary
+     * @throws std::runtime_error if getting summary fails
+     */
+    py::object get_power_summary() {
+        pm_power_summary_t summary;
+        if (pm_get_power_summary(handle_, &summary) != PM_SUCCESS) {
+            throw std::runtime_error("Failed to get power summary");
+        }
+
+        py::dict result;
+        result["ps_total_power"] = summary.ps_total_power;
+        result["pl_total_power"] = summary.pl_total_power;
+        result["total_power"] = summary.total_power;
+
+        return result;
+    }
+
+    /**
+     * @brief Get power summary statistics (PS, PL, Total)
+     * @return Python dictionary containing power summary statistics
+     * @throws std::runtime_error if getting summary statistics fails
+     */
+    py::object get_power_summary_stats() {
+        pm_power_summary_stats_t summary_stats;
+        if (pm_get_power_summary_stats(handle_, &summary_stats) != PM_SUCCESS) {
+            throw std::runtime_error("Failed to get power summary statistics");
+        }
+
+        py::dict result;
+
+        py::dict ps_total_power_stats;
+        add_stats_to_dict(ps_total_power_stats, summary_stats.ps_total_power);
+        result["ps_total_power"] = ps_total_power_stats;
+
+        py::dict pl_total_power_stats;
+        add_stats_to_dict(pl_total_power_stats, summary_stats.pl_total_power);
+        result["pl_total_power"] = pl_total_power_stats;
+
+        py::dict total_power_stats;
+        add_stats_to_dict(total_power_stats, summary_stats.total_power);
+        result["total_power"] = total_power_stats;
+
+        return result;
+    }
+
+    /**
      * @brief Get the number of sensors
      * @return Number of sensors
      * @throws std::runtime_error if getting sensor count fails
@@ -271,6 +318,8 @@ PYBIND11_MODULE(_core, m) {
         .def("get_latest_data", &PowerMonitor::get_latest_data)
         .def("get_statistics", &PowerMonitor::get_statistics)
         .def("reset_statistics", &PowerMonitor::reset_statistics)
+        .def("get_power_summary", &PowerMonitor::get_power_summary)
+        .def("get_power_summary_stats", &PowerMonitor::get_power_summary_stats)
         .def("get_sensor_count", &PowerMonitor::get_sensor_count)
         .def("get_sensor_names", [](PowerMonitor& self) {
             PyErr_WarnEx(PyExc_DeprecationWarning,

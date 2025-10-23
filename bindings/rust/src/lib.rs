@@ -96,6 +96,30 @@ pub struct PowerStats {
     pub sensor_count: i32,
 }
 
+/// Summary power data for PS, PL and Total
+#[repr(C)]
+#[derive(Debug)]
+pub struct PowerSummary {
+    /// PS total power in watts
+    pub ps_total_power: f64,
+    /// PL total power in watts
+    pub pl_total_power: f64,
+    /// Total power in watts
+    pub total_power: f64,
+}
+
+/// Summary power statistics for PS, PL and Total
+#[repr(C)]
+#[derive(Debug)]
+pub struct PowerSummaryStats {
+    /// PS total power statistics
+    pub ps_total_power: Stats,
+    /// PL total power statistics
+    pub pl_total_power: Stats,
+    /// Total power statistics
+    pub total_power: Stats,
+}
+
 /// Error codes returned by library functions
 #[derive(Debug)]
 #[repr(i32)]
@@ -310,11 +334,11 @@ impl PowerMonitor {
     }
 
     /// Resets the statistics
-    /// 
+    ///
     /// This function resets all collected statistics.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - Success
     /// * `Err(Error)` - An error code if resetting statistics fails
     pub fn reset_statistics(&self) -> Result<(), Error> {
@@ -325,10 +349,52 @@ impl PowerMonitor {
         Ok(())
     }
 
-    /// Gets the number of sensors
-    /// 
+    /// Gets the power summary (PS, PL, Total)
+    ///
+    /// This function returns the latest power values for PS, PL and Total.
+    ///
     /// # Returns
-    /// 
+    ///
+    /// * `Ok(PowerSummary)` - Power summary data
+    /// * `Err(Error)` - An error code if getting summary fails
+    pub fn get_power_summary(&self) -> Result<PowerSummary, Error> {
+        let mut summary = PowerSummary {
+            ps_total_power: 0.0,
+            pl_total_power: 0.0,
+            total_power: 0.0,
+        };
+        let result = unsafe { pm_get_power_summary(self.handle.as_ptr(), &mut summary) };
+        if result != 0 {
+            return Err(result.into());
+        }
+        Ok(summary)
+    }
+
+    /// Gets the power summary statistics (PS, PL, Total)
+    ///
+    /// This function returns the power statistics for PS, PL and Total.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(PowerSummaryStats)` - Power summary statistics
+    /// * `Err(Error)` - An error code if getting summary statistics fails
+    pub fn get_power_summary_stats(&self) -> Result<PowerSummaryStats, Error> {
+        let mut summary_stats = PowerSummaryStats {
+            ps_total_power: unsafe { std::mem::zeroed() },
+            pl_total_power: unsafe { std::mem::zeroed() },
+            total_power: unsafe { std::mem::zeroed() },
+        };
+        let result = unsafe { pm_get_power_summary_stats(self.handle.as_ptr(), &mut summary_stats) };
+        if result != 0 {
+            return Err(result.into());
+        }
+        Ok(summary_stats)
+    }
+
+    /// Gets the number of sensors
+    ///
+    /// # Returns
+    ///
     /// * `Ok(i32)` - Number of sensors
     /// * `Err(Error)` - An error code if getting sensor count fails
     pub fn get_sensor_count(&self) -> Result<i32, Error> {
@@ -428,6 +494,8 @@ extern "C" {
     fn pm_get_latest_data(handle: *mut c_void, data: *mut PowerData) -> i32;
     fn pm_get_statistics(handle: *mut c_void, stats: *mut PowerStats) -> i32;
     fn pm_reset_statistics(handle: *mut c_void) -> i32;
+    fn pm_get_power_summary(handle: *mut c_void, summary: *mut PowerSummary) -> i32;
+    fn pm_get_power_summary_stats(handle: *mut c_void, summary_stats: *mut PowerSummaryStats) -> i32;
     fn pm_get_sensor_count(handle: *mut c_void, count: *mut i32) -> i32;
     fn pm_get_sensor_names(handle: *mut c_void, names: *mut *mut i8, count: *mut i32) -> i32;
 }

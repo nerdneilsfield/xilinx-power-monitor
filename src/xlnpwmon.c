@@ -697,6 +697,56 @@ pm_error_t pm_reset_statistics(pm_handle_t handle) {
 }
 
 /**
+ * @brief Get power summary (PS_TOTAL_POWER, PL_TOTAL_POWER, TOTAL_POWER)
+ */
+pm_error_t pm_get_power_summary(pm_handle_t handle, pm_power_summary_t* summary) {
+  if (!handle) {
+    return PM_ERROR_NOT_INITIALIZED;
+  }
+
+  if (!summary) {
+    return PM_ERROR_INIT_FAILED;
+  }
+
+  pthread_mutex_lock(&handle->data_mutex);
+
+  int virtual_base = handle->physical_sensor_count;
+
+  summary->ps_total_power = handle->current_data[virtual_base + VIRTUAL_PS_TOTAL_IDX].power;
+  summary->pl_total_power = handle->current_data[virtual_base + VIRTUAL_PL_TOTAL_IDX].power;
+  summary->total_power = handle->current_data[virtual_base + VIRTUAL_TOTAL_IDX].power;
+
+  pthread_mutex_unlock(&handle->data_mutex);
+
+  return PM_SUCCESS;
+}
+
+/**
+ * @brief Get power summary statistics (PS_TOTAL_POWER, PL_TOTAL_POWER, TOTAL_POWER)
+ */
+pm_error_t pm_get_power_summary_stats(pm_handle_t handle, pm_power_summary_stats_t* summary_stats) {
+  if (!handle) {
+    return PM_ERROR_NOT_INITIALIZED;
+  }
+
+  if (!summary_stats) {
+    return PM_ERROR_INIT_FAILED;
+  }
+
+  pthread_mutex_lock(&handle->data_mutex);
+
+  int virtual_base = handle->physical_sensor_count;
+
+  summary_stats->ps_total_power = handle->stats[virtual_base + VIRTUAL_PS_TOTAL_IDX].power;
+  summary_stats->pl_total_power = handle->stats[virtual_base + VIRTUAL_PL_TOTAL_IDX].power;
+  summary_stats->total_power = handle->stats[virtual_base + VIRTUAL_TOTAL_IDX].power;
+
+  pthread_mutex_unlock(&handle->data_mutex);
+
+  return PM_SUCCESS;
+}
+
+/**
  * @brief Get the number of sensors
  */
 pm_error_t pm_get_sensor_count(pm_handle_t handle, int *count) {

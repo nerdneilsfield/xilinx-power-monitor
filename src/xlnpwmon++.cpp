@@ -194,6 +194,24 @@ void PowerMonitor::resetStatistics() {
     }
 }
 
+pm_power_summary_t PowerMonitor::getPowerSummary() const {
+    pm_power_summary_t summary;
+    pm_error_t error = pm_get_power_summary(*handle_.get(), &summary);
+    if (error != PM_SUCCESS) {
+        throw std::runtime_error(pm_error_string(error));
+    }
+    return summary;
+}
+
+pm_power_summary_stats_t PowerMonitor::getPowerSummaryStats() const {
+    pm_power_summary_stats_t summary_stats;
+    pm_error_t error = pm_get_power_summary_stats(*handle_.get(), &summary_stats);
+    if (error != PM_SUCCESS) {
+        throw std::runtime_error(pm_error_string(error));
+    }
+    return summary_stats;
+}
+
 int PowerMonitor::getSensorCount() const {
     int count;
     pm_error_t error = pm_get_sensor_count(*handle_.get(), &count);
