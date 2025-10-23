@@ -62,13 +62,27 @@ jobs:
           # Manually copy headers and libraries to sysroot (skip progs to avoid strip issue)
           echo "Copying ncurses headers and libraries to sysroot..."
 
-          # Copy headers
-          cp -r include/ncurses*.h $HOME/aarch64-sysroot/usr/include/ || true
-          cp -r include/curses.h $HOME/aarch64-sysroot/usr/include/ || true
-          cp -r include/term.h $HOME/aarch64-sysroot/usr/include/ || true
-          cp -r include/unctrl.h $HOME/aarch64-sysroot/usr/include/ || true
+          # Copy headers - ncurses generates headers in include/ directory
+          echo "Available headers:"
+          ls -la include/*.h
+
+          # Copy all generated headers
+          cp include/*.h $HOME/aarch64-sysroot/usr/include/ 2>/dev/null || true
+
+          # Also check if there's a subdirectory
+          if [ -d "include/ncurses" ]; then
+            mkdir -p $HOME/aarch64-sysroot/usr/include/ncurses
+            cp include/ncurses/*.h $HOME/aarch64-sysroot/usr/include/ncurses/ 2>/dev/null || true
+          fi
+
+          # Verify headers were copied
+          echo "Headers in sysroot:"
+          ls -la $HOME/aarch64-sysroot/usr/include/ | grep -E '(curses|ncurses|term)' || echo "Warning: No ncurses headers found"
 
           # Copy libraries
+          echo "Available libraries:"
+          ls -la lib/
+
           cp -P lib/libncurses*.so* $HOME/aarch64-sysroot/usr/lib/ || true
           cp -P lib/libncurses*.a $HOME/aarch64-sysroot/usr/lib/ || true
           cp -P lib/libtinfo*.so* $HOME/aarch64-sysroot/usr/lib/ || true
