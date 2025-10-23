@@ -1,6 +1,6 @@
 [package]
 name = "xlnpwmon"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 authors = ["Qi Deng <dengqi935@gmail.com>"]
 description = "Rust bindings for Xilinx Power Monitor"

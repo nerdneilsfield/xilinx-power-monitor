@@ -55,16 +55,32 @@ pip install xlnpwmon
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.1"
+xlnpwmon = "0.0.2"
 ```
 
 ### C/C++
 
-从 [Releases](https://github.com/yourusername/xilinx-power-monitor/releases) 页面下载预编译的 `.deb` 包：
+**对于 Debian/Ubuntu 系统：**
+
+从 [Releases](https://github.com/nerdneilsfield/xilinx-power-monitor/releases) 页面下载预编译的 `.deb` 包：
 
 ```bash
-sudo dpkg -i xlnpwmon_0.0.1_amd64.deb
+sudo dpkg -i xlnpwmon_0.0.2_amd64.deb
 ```
+
+**对于基于 RPM 的系统（CentOS/RHEL/Fedora/PetaLinux）：**
+
+从 [Releases](https://github.com/nerdneilsfield/xilinx-power-monitor/releases) 页面下载预编译的 `.rpm` 包：
+
+```bash
+# 对于基于 DNF 的系统（Fedora、RHEL 8+、Rocky Linux）
+sudo dnf install xlnpwmon-0.1-1.aarch64.rpm
+
+# 对于基于 YUM 的系统（CentOS 7、RHEL 7）
+sudo yum install xlnpwmon-0.1-1.aarch64.rpm
+```
+
+**使用 CMake：**
 
 或者使用 CMake 在你的项目中查找和链接库：
 
@@ -229,7 +245,7 @@ monitor_power_consumption(cpu_intensive_task)
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.1"
+xlnpwmon = "0.0.2"
 
 # 示例也使用了这些crate：
 ndarray = "0.15" # 用于矩阵示例
@@ -312,7 +328,7 @@ fn main() -> Result<(), Error> {
 
 ```toml
 [dependencies]
-xlnpwmon = { version = "0.0.1" } # 根据需要进行调整
+xlnpwmon = { version = "0.0.2" } # 根据需要进行调整
 ndarray = "0.15"
 rand = "0.8"
 ```

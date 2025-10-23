@@ -54,16 +54,32 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.1"
+xlnpwmon = "0.0.2"
 ```
 
 ### C/C++
 
-Download the pre-built `.deb` package from the [Releases](https://github.com/yourusername/xilinx-power-monitor/releases) page:
+**For Debian/Ubuntu systems:**
+
+Download the pre-built `.deb` package from the [Releases](https://github.com/nerdneilsfield/xilinx-power-monitor/releases) page:
 
 ```bash
-sudo dpkg -i xlnpwmon_0.0.1_amd64.deb
+sudo dpkg -i xlnpwmon_0.0.2_amd64.deb
 ```
+
+**For RPM-based systems (CentOS/RHEL/Fedora/PetaLinux):**
+
+Download the pre-built `.rpm` package from the [Releases](https://github.com/nerdneilsfield/xilinx-power-monitor/releases) page:
+
+```bash
+# For DNF-based systems (Fedora, RHEL 8+, Rocky Linux)
+sudo dnf install xlnpwmon-0.1-1.aarch64.rpm
+
+# For YUM-based systems (CentOS 7, RHEL 7)
+sudo yum install xlnpwmon-0.1-1.aarch64.rpm
+```
+
+**Using CMake:**
 
 Or use CMake to find and link the library in your project:
 
@@ -224,7 +240,7 @@ First, add `xlnpwmon` as a dependency in your `Cargo.toml`. Adjust the path or v
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.1"
+xlnpwmon = "0.0.2"
 
 # The examples also use these crates:
 ndarray = "0.15" # For matrix example
@@ -308,7 +324,7 @@ Dependencies needed for this example:
 
 ```toml
 [dependencies]
-xlnpwmon = { version = "0.0.1" } # Adjust as needed
+xlnpwmon = { version = "0.0.2" } # Adjust as needed
 ndarray = "0.15"
 rand = "0.8"
 ```
