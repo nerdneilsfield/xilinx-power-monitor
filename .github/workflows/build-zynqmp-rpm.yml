@@ -25,9 +25,13 @@ jobs:
             cmake \
             rpm \
             file \
-            wget \
-            libncurses-dev:arm64 \
-            libncursesw5-dev:arm64 || true
+            wget
+
+          # Verify toolchain installation
+          which aarch64-linux-gnu-gcc
+          which aarch64-linux-gnu-g++
+          aarch64-linux-gnu-gcc --version
+          aarch64-linux-gnu-g++ --version
 
       - name: Setup ARM64 sysroot with ncurses 6.2
         run: |
@@ -72,25 +76,23 @@ jobs:
         run: |
           set -e
 
+          # Set sysroot environment variable for toolchain file
+          export ZYNQMP_SYSROOT=$HOME/aarch64-sysroot
+
+          echo "Using ZynqMP sysroot: $ZYNQMP_SYSROOT"
+          echo "Toolchain file: ${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake"
+
           # Create build directory
           rm -rf build_zynqmp
           mkdir -p build_zynqmp
           cd build_zynqmp
 
-          # Configure with ARM64 cross-compilation toolchain
+          # Configure with ZynqMP toolchain file
           cmake \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
-            -DCMAKE_SYSROOT=$HOME/aarch64-sysroot \
-            -DCMAKE_FIND_ROOT_PATH=$HOME/aarch64-sysroot \
-            -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
-            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
-            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-            -DCURSES_INCLUDE_PATH=$HOME/aarch64-sysroot/usr/include \
-            -DCURSES_LIBRARY=$HOME/aarch64-sysroot/usr/lib/libncurses.so \
+            -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCURSES_INCLUDE_PATH=$ZYNQMP_SYSROOT/usr/include \
+            -DCURSES_LIBRARY=$ZYNQMP_SYSROOT/usr/lib/libncurses.so \
             -DBUILD_PYTHON_BINDINGS=OFF \
             -DBUILD_CPP_BINDINGS=ON \
             -DBUILD_CLI=ON \

@@ -107,8 +107,8 @@ jobs:
           # sudo apt-get install -y zlib1g-dev:arm64 libssl-dev:arm64 ...
           echo "Checking libncurses-dev:arm64 installation paths..."
           dpkg -L libncurses-dev:arm64 | grep -E 'include|lib.*\.so'
-          echo "Checking libeigen3-dev:arm64 installation paths..."
-          dpkg -L libeigen3-dev:arm64 | grep -E 'include|lib.*\.so'
+          # echo "Checking libeigen3-dev:arm64 installation paths..."
+          # dpkg -L libeigen3-dev:arm64 | grep -E 'include|lib.*\.so'
 
           # Set up CMake toolchain environment variable (if your toolchain file needs it)
           echo "CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/.github/toolchain-arm64.cmake" >> $GITHUB_ENV
