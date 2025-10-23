@@ -1,9 +1,9 @@
-# name: Build Ubuntu Packages
+name: Build Ubuntu Packages
 
-# on:
-#   push:
-#     tags: ["v*"]
-#   workflow_dispatch: # Allows manual triggering of the workflow
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: # Allows manual triggering of the workflow
 
 # jobs:
 #   build_deb_packages:
