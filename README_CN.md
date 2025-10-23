@@ -1071,6 +1071,30 @@ class PowerMonitor:
             dict: 包含聚合（'total'）和每个传感器（'sensors'）统计数据的字典。见下面文档的结构。返回空或部分填充的字典，如果采样没有运行或失败。
         """
         pass
+
+    def get_power_summary(self) -> dict:
+        """
+        获取 PS、PL 和总计的最新功耗摘要。
+
+        返回:
+            dict: 包含以下内容的字典：
+                - 'ps_total_power' (float): 处理系统总功率，单位为瓦特
+                - 'pl_total_power' (float): 可编程逻辑总功率，单位为瓦特
+                - 'total_power' (float): 系统总功率，单位为瓦特
+        """
+        pass
+
+    def get_power_summary_stats(self) -> dict:
+        """
+        获取 PS、PL 和总计的功耗统计摘要。
+
+        返回:
+            dict: 包含每个子系统统计信息的字典：
+                - 'ps_total_power' (dict): PS 功率统计，包含 min、max、avg、total、count
+                - 'pl_total_power' (dict): PL 功率统计，包含 min、max、avg、total、count
+                - 'total_power' (dict): 总功率统计，包含 min、max、avg、total、count
+        """
+        pass
 ```
 
 </details>

@@ -1071,6 +1071,30 @@ class PowerMonitor:
                   partially filled dict if sampling didn't run or failed.
         """
         pass
+
+    def get_power_summary(self) -> dict:
+        """
+        Retrieves the latest power consumption summary for PS, PL, and Total.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'ps_total_power' (float): Processing System total power in Watts
+                - 'pl_total_power' (float): Programmable Logic total power in Watts
+                - 'total_power' (float): Total system power in Watts
+        """
+        pass
+
+    def get_power_summary_stats(self) -> dict:
+        """
+        Retrieves power statistics summary for PS, PL, and Total.
+
+        Returns:
+            dict: A dictionary containing statistics for each subsystem:
+                - 'ps_total_power' (dict): PS power stats with min, max, avg, total, count
+                - 'pl_total_power' (dict): PL power stats with min, max, avg, total, count
+                - 'total_power' (dict): Total power stats with min, max, avg, total, count
+        """
+        pass
 ```
 
 </details>

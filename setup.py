@@ -24,5 +24,5 @@ setup(
     packages=find_packages(where='python'),
     ext_modules=ext_modules,
     zip_safe=False,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
 )

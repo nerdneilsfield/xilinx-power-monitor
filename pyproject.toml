@@ -10,14 +10,14 @@ authors = [
     { name = "Qi Deng", email = "dengqi935@gmail.com" }
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["xilinx", "power", "monitor", "nvidia", "nvidia-xilinx", "xilinx-power-monitor"]
 dependencies = ["pybind11>=2.9.0"]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.5",    
-    "black>=25.1.0", 
+    "black>=24.1.0", 
     "build>=0.10.0",
     "pyyaml>=6.0.2",
     "lark>=1.2.2"
