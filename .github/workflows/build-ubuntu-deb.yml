@@ -1,0 +1,186 @@
+name: Build Ubuntu Packages
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  build_deb_packages:
+    name: Build DEB packages on ${{ matrix.ubuntu }}
+    runs-on: ${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
+        arch: [arm64]
+        # Exclude unsupported combinations
+        # exclude:
+        #   # If there are combinations that need to be excluded, you can add them here
+        #   - ubuntu: ubuntu-20.04
+        #     arch: arm64  # For example: suppose 20.04 does not build arm64 version
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full clone to get version information
+
+      # Set up QEMU for cross-compilation
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      # Install necessary build dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libncurses-dev
+
+      - name: Setup cross-compilation
+        if: matrix.arch == 'arm64' && runner.os == 'Linux'
+        run: |
+          # Install basic tools first (on native arch), including ca-certificates for https if needed
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+              gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+              ca-certificates
+
+          # Add arm64 architecture
+          sudo dpkg --add-architecture arm64
+
+          # Get native architecture and Ubuntu codename
+          NATIVE_ARCH=$(dpkg --print-architecture)
+          source /etc/os-release
+          UBUNTU_CODENAME=$VERSION_CODENAME
+          echo "Native architecture: ${NATIVE_ARCH}, Codename: ${UBUNTU_CODENAME}"
+
+          # --- Overwrite sources.list with official Ubuntu archives ---
+          echo "Overwriting /etc/apt/sources.list with official Ubuntu archives..."
+          # Backup original file (optional but recommended)
+          sudo cp /etc/apt/sources.list /etc/apt/sources.list.orig.${NATIVE_ARCH}
+
+          # Define the new sources.list content targeting official repos
+          # Using HTTP here, change to HTTPS if preferred and ensure ca-certificates is installed
+          SOURCES_CONTENT="
+          # Sources for native architecture: ${NATIVE_ARCH}
+          deb [arch=${NATIVE_ARCH}] http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME} main restricted universe multiverse
+          deb [arch=${NATIVE_ARCH}] http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse
+          deb [arch=${NATIVE_ARCH}] http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-backports main restricted universe multiverse
+          deb [arch=${NATIVE_ARCH}] http://security.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse
+
+          # Sources for foreign architecture: arm64
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_CODENAME} main restricted universe multiverse
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_CODENAME}-backports main restricted universe multiverse
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ ${UBUNTU_CODENAME}-security main restricted universe multiverse
+          "
+
+          # Write the new content to sources.list using sudo tee
+          # Using tee ensures we have permission to write to the file
+          echo "${SOURCES_CONTENT}" | sudo tee /etc/apt/sources.list > /dev/null
+          echo "New /etc/apt/sources.list created."
+
+          # Clear out sources.list.d to prevent conflicts from runner's default extra repos
+          echo "Clearing /etc/apt/sources.list.d/..."
+          # Backup the directory first (optional)
+          if [ -d /etc/apt/sources.list.d ]; then
+              sudo cp -a /etc/apt/sources.list.d /etc/apt/sources.list.d.orig.${NATIVE_ARCH}
+              sudo rm -f /etc/apt/sources.list.d/*
+              echo "/etc/apt/sources.list.d/ cleared."
+          else
+              echo "/etc/apt/sources.list.d/ does not exist, skipping clear."
+          fi
+          # --- End of overwrite section ---
+
+          # Update package lists with the brand new source configuration
+          echo "Running apt-get update with new official sources..."
+          sudo apt-get update
+
+          # Install necessary arm64 build dependencies
+          echo "Installing arm64 libraries..."
+          # Example: install libncurses-dev for arm64
+          sudo apt-get install -y libncurses-dev:arm64 libeigen3-dev:arm64
+          # Add any other required :arm64 dependencies here, e.g.:
+          # sudo apt-get install -y zlib1g-dev:arm64 libssl-dev:arm64 ...
+          echo "Checking libncurses-dev:arm64 installation paths..."
+          dpkg -L libncurses-dev:arm64 | grep -E 'include|lib.*\.so'
+          echo "Checking libeigen3-dev:arm64 installation paths..."
+          dpkg -L libeigen3-dev:arm64 | grep -E 'include|lib.*\.so'
+
+          # Set up CMake toolchain environment variable (if your toolchain file needs it)
+          echo "CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/.github/toolchain-arm64.cmake" >> $GITHUB_ENV
+
+      # Build and package
+      - name: Configure CMake
+        run: |
+          echo "Clearing old CMake cache..."
+          rm -rf build
+          mkdir -p build
+          cd build
+          echo "Running CMake configuration..."
+          cmake ${{ env.CMAKE_ARGS }} \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_PYTHON_BINDINGS=OFF \
+                -DBUILD_CPP_BINDINGS=ON \
+                -DBUILD_CLI=ON \
+                -DBUILD_TESTS=OFF \
+                -DBUILD_EXAMPLES=ON \
+                ..
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          cd build
+          cpack -G DEB
+
+      # Rename packages to include Ubuntu version and architecture information
+      - name: Rename packages
+        run: |
+          cd build
+          ubuntu_version=$(echo ${{ matrix.ubuntu }} | sed 's/ubuntu-//')
+          for pkg in *.deb; do
+            new_name=$(echo $pkg | sed "s/.deb/_$ubuntu_version-${{ matrix.arch }}.deb/")
+            mv "$pkg" "$new_name"
+          done
+
+      # Upload build artifacts
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-packages-${{ matrix.ubuntu }}-${{ matrix.arch }}
+          path: build/*.deb
+          if-no-files-found: error
+
+  # If it's a release tag, upload the packages to GitHub Releases
+  release_packages:
+    name: Release Ubuntu Packages
+    needs: build_deb_packages
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: ubuntu-packages-*
+          merge-multiple: false
+
+      - name: Prepare packages for release
+        run: |
+          mkdir -p release_packages
+          find artifacts -name "*.deb" -exec cp {} release_packages/ \;
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_packages/*.deb

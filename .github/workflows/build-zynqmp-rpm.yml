@@ -1,0 +1,145 @@
+name: Build RPM Package for ZynqMP
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build_zynqmp_rpm:
+    name: Build RPM for PetaLinux ZynqMP (ARM64)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install cross-compilation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            cmake \
+            rpm \
+            file \
+            wget \
+            libncurses-dev:arm64 \
+            libncursesw5-dev:arm64 || true
+
+      - name: Setup ARM64 sysroot with ncurses 6.2
+        run: |
+          set -e
+
+          # Create sysroot directory
+          mkdir -p $HOME/aarch64-sysroot/usr/{include,lib}
+
+          # Download and build ncurses 6.2 for ARM64
+          cd $HOME
+          wget https://ftp.gnu.org/gnu/ncurses/ncurses-6.2.tar.gz
+          tar xzf ncurses-6.2.tar.gz
+          cd ncurses-6.2
+
+          # Configure for ARM64 cross-compilation
+          ./configure \
+            --host=aarch64-linux-gnu \
+            --prefix=$HOME/aarch64-sysroot/usr \
+            --with-shared \
+            --enable-widec \
+            --with-termlib \
+            --without-debug \
+            --without-tests
+
+          make -j$(nproc)
+          make install
+
+          # Create symlinks for non-wide version
+          cd $HOME/aarch64-sysroot/usr/lib
+          ln -sf libncursesw.so libncurses.so || true
+          ln -sf libncursesw.a libncurses.a || true
+          ln -sf libtinfow.so libtinfo.so || true
+          ln -sf libtinfow.a libtinfo.a || true
+
+          # Verify libraries
+          echo "Built libraries:"
+          ls -lh libncurses* libtinfo* || true
+
+          echo "ARM64 sysroot with ncurses 6.2 (with tinfo) created at $HOME/aarch64-sysroot"
+
+      - name: Build for ZynqMP (ARM64 cross-compile)
+        run: |
+          set -e
+
+          # Create build directory
+          rm -rf build_zynqmp
+          mkdir -p build_zynqmp
+          cd build_zynqmp
+
+          # Configure with ARM64 cross-compilation toolchain
+          cmake \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+            -DCMAKE_SYSROOT=$HOME/aarch64-sysroot \
+            -DCMAKE_FIND_ROOT_PATH=$HOME/aarch64-sysroot \
+            -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+            -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+            -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+            -DCURSES_INCLUDE_PATH=$HOME/aarch64-sysroot/usr/include \
+            -DCURSES_LIBRARY=$HOME/aarch64-sysroot/usr/lib/libncurses.so \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_PYTHON_BINDINGS=OFF \
+            -DBUILD_CPP_BINDINGS=ON \
+            -DBUILD_CLI=ON \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_EXAMPLES=ON \
+            ..
+
+          # Build
+          echo "Building for PetaLinux ZynqMP (ARM64)..."
+          make -j$(nproc) VERBOSE=1
+
+          # Verify architecture of built binaries
+          echo "Verifying binary architecture..."
+          file xilinx-power-ctl/xilinx_power_ctl || true
+
+          # Package as RPM
+          cpack -G RPM
+
+      - name: Rename package
+        run: |
+          cd build_zynqmp
+          for pkg in *.rpm; do
+            new_name=$(echo $pkg | sed "s/.rpm/_petalinux-zynqmp-aarch64.rpm/")
+            mv "$pkg" "$new_name"
+            echo "Created package: $new_name"
+          done
+
+      - name: Upload RPM package
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package-zynqmp
+          path: build_zynqmp/*.rpm
+          if-no-files-found: error
+
+  release_package:
+    name: Release ZynqMP RPM Package
+    needs: build_zynqmp_rpm
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-package-zynqmp
+          path: packages
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*.rpm
