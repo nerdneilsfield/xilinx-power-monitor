@@ -75,6 +75,10 @@ jobs:
             cp include/ncurses/*.h $HOME/aarch64-sysroot/usr/include/ncurses/ 2>/dev/null || true
           fi
 
+          # Create ncurses.h symlink (ncurses expects this)
+          cd $HOME/aarch64-sysroot/usr/include
+          ln -sf curses.h ncurses.h
+
           # Verify headers were copied
           echo "Headers in sysroot:"
           ls -la $HOME/aarch64-sysroot/usr/include/ | grep -E '(curses|ncurses|term)' || echo "Warning: No ncurses headers found"
