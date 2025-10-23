@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xlnpwmon"
-version = "0.0.2"
+version = "0.0.3"
 description = "A simple power monitor for Xilinx"
 authors = [
     { name = "Qi Deng", email = "dengqi935@gmail.com" }

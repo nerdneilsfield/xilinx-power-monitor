@@ -2,7 +2,7 @@
 """
 xlnpwmon - A simple power monitor for Xilinx.
 """
-__version__ = "0.0.2" # Keep version consistent
+__version__ = "0.0.3" # Keep version consistent
 
 try:
     # Import symbols from the compiled C++ module named '_core'

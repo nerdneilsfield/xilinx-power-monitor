@@ -84,7 +84,7 @@ jobs:
           fi
 
           # Create ncurses.h symlink (ncurses expects this)
-          ln -sf $HOME/aarch64-sysroot/usr/include/curses.h $HOME/aarch64-sysroot/usr/include/ncurses.h
+          ln -sf curses.h $HOME/aarch64-sysroot/usr/include/ncurses.h
 
           # Verify headers were copied
           echo "Headers in sysroot:"
@@ -162,6 +162,52 @@ jobs:
             echo "Created package: $new_name"
           done
 
+      - name: Create binary distribution tarball
+        run: |
+          set -e
+
+          # Create distribution directory
+          DIST_DIR="xlnpwmon-zynqmp-binary"
+          mkdir -p $DIST_DIR
+
+          # Copy source files
+          cp -r include $DIST_DIR/
+          cp -r src $DIST_DIR/
+          cp -r example $DIST_DIR/
+          cp README.md $DIST_DIR/
+          cp README_CN.md $DIST_DIR/ || true
+          cp LICENSE $DIST_DIR/ || true
+          cp INSTALL.txt $DIST_DIR/
+          cp scripts/install_from_tarball.sh $DIST_DIR/ || true
+
+          # Copy compiled binaries and libraries
+          mkdir -p $DIST_DIR/bin
+          mkdir -p $DIST_DIR/lib
+
+          # Copy CLI binary
+          if [ -f build_zynqmp/xlnpwmon_cli ]; then
+            cp build_zynqmp/xlnpwmon_cli $DIST_DIR/bin/
+          fi
+
+          # Copy libraries (both shared and static)
+          # C libraries
+          cp build_zynqmp/libxlnpwmon.so $DIST_DIR/lib/ 2>/dev/null || true
+          cp build_zynqmp/libxlnpwmon_static.a $DIST_DIR/lib/ 2>/dev/null || true
+          # C++ libraries
+          cp build_zynqmp/libxlnpwmon_cpp.so $DIST_DIR/lib/ 2>/dev/null || true
+          cp build_zynqmp/libxlnpwmon_static_cpp.a $DIST_DIR/lib/ 2>/dev/null || true
+
+          # Create tarball with version info
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          TARBALL_NAME="xlnpwmon-${VERSION}-zynqmp-aarch64.tar.gz"
+          tar czf $TARBALL_NAME $DIST_DIR
+
+          echo "Created tarball: $TARBALL_NAME"
+          ls -lh $TARBALL_NAME
+
+          # Move to build directory for easier artifact collection
+          mv $TARBALL_NAME build_zynqmp/
+
       - name: Upload RPM package
         uses: actions/upload-artifact@v4
         with:
@@ -169,21 +215,34 @@ jobs:
           path: build_zynqmp/*.rpm
           if-no-files-found: error
 
+      - name: Upload binary tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-tarball-zynqmp
+          path: build_zynqmp/*.tar.gz
+          if-no-files-found: error
+
   release_package:
-    name: Release ZynqMP RPM Package
+    name: Release ZynqMP Packages
     needs: build_zynqmp_rpm
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download artifacts
+      - name: Download RPM artifacts
         uses: actions/download-artifact@v4
         with:
           name: rpm-package-zynqmp
           path: packages
 
+      - name: Download tarball artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binary-tarball-zynqmp
+          path: packages
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: packages/*.rpm
+          files: packages/*

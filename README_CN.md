@@ -55,7 +55,7 @@ pip install xlnpwmon
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.2"
+xlnpwmon = "0.0.3"
 ```
 
 ### C/C++
@@ -65,7 +65,7 @@ xlnpwmon = "0.0.2"
 从 [Releases](https://github.com/nerdneilsfield/xilinx-power-monitor/releases) 页面下载预编译的 `.deb` 包：
 
 ```bash
-sudo dpkg -i xlnpwmon_0.0.2_amd64.deb
+sudo dpkg -i xlnpwmon_0.0.3_amd64.deb
 ```
 
 **对于基于 RPM 的系统（CentOS/RHEL/Fedora/PetaLinux）：**
@@ -245,7 +245,7 @@ monitor_power_consumption(cpu_intensive_task)
 
 ```toml
 [dependencies]
-xlnpwmon = "0.0.2"
+xlnpwmon = "0.0.3"
 
 # 示例也使用了这些crate：
 ndarray = "0.15" # 用于矩阵示例
@@ -328,7 +328,7 @@ fn main() -> Result<(), Error> {
 
 ```toml
 [dependencies]
-xlnpwmon = { version = "0.0.2" } # 根据需要进行调整
+xlnpwmon = { version = "0.0.3" } # 根据需要进行调整
 ndarray = "0.15"
 rand = "0.8"
 ```

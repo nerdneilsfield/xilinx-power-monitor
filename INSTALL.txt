@@ -1,0 +1,22 @@
+# Installation Instructions for ZynqMP Binary Distribution
+
+## Contents
+- bin/         - Compiled executables
+- lib/         - Compiled libraries (.so and .a)
+- include/     - Header files
+- src/         - Source code
+- README.md    - Project documentation
+
+## Quick Installation
+
+### Install libraries and headers
+sudo cp lib/* /usr/lib/
+sudo cp -r include/* /usr/include/
+sudo cp bin/* /usr/bin/
+sudo ldconfig
+
+### Or install from RPM package (recommended)
+sudo dnf install libxlnpwmon-*_petalinux-zynqmp-aarch64.rpm
+
+## Build from Source
+See README.md for build instructions.
