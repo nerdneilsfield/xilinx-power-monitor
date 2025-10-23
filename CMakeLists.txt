@@ -264,6 +264,10 @@ set(CPACK_RPM_PACKAGE_AUTOPROV OFF)
 # 禁用 RPM 自动 strip（避免交叉编译时使用错误的 strip 工具）
 set(CPACK_RPM_SPEC_MORE_DEFINE "%define __strip /bin/true
 %define debug_package %{nil}")
+# 设置 RPM 包架构（交叉编译时需要明确指定）
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  set(CPACK_RPM_PACKAGE_ARCHITECTURE "aarch64")
+endif()
 
 # 只保留 dev 组件
 set(CPACK_DEB_COMPONENT_INSTALL ON)
