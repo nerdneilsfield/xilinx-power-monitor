@@ -33,7 +33,15 @@ jobs:
           aarch64-linux-gnu-gcc --version
           aarch64-linux-gnu-g++ --version
 
+      - name: Cache ARM64 sysroot
+        id: cache-sysroot
+        uses: actions/cache@v4
+        with:
+          path: ~/aarch64-sysroot
+          key: aarch64-sysroot-ncurses-6.2-${{ runner.os }}
+
       - name: Setup ARM64 sysroot with ncurses 6.2
+        if: steps.cache-sysroot.outputs.cache-hit != 'true'
         run: |
           set -e
 
