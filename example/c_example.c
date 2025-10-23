@@ -174,22 +174,22 @@ void monitor_power_consumption(workload_stats_t (*task_func)()) {
     printf("===============================================\n\n");
 
     printf("--- Processing System (PS) ---\n");
-    printf("  Average Power:    %.2f W\n", summary.ps.power.avg);
-    printf("  Min Power:        %.2f W\n", summary.ps.power.min);
-    printf("  Max Power:        %.2f W\n", summary.ps.power.max);
-    printf("  Total Energy:     %.2f J\n\n", summary.ps.power.total);
+    printf("  Average Power:    %.2f W\n", summary.ps_total_power.avg);
+    printf("  Min Power:        %.2f W\n", summary.ps_total_power.min);
+    printf("  Max Power:        %.2f W\n", summary.ps_total_power.max);
+    printf("  Total Energy:     %.2f J\n\n", summary.ps_total_power.total);
 
     printf("--- Programmable Logic (PL) ---\n");
-    printf("  Average Power:    %.2f W\n", summary.pl.power.avg);
-    printf("  Min Power:        %.2f W\n", summary.pl.power.min);
-    printf("  Max Power:        %.2f W\n", summary.pl.power.max);
-    printf("  Total Energy:     %.2f J\n\n", summary.pl.power.total);
+    printf("  Average Power:    %.2f W\n", summary.pl_total_power.avg);
+    printf("  Min Power:        %.2f W\n", summary.pl_total_power.min);
+    printf("  Max Power:        %.2f W\n", summary.pl_total_power.max);
+    printf("  Total Energy:     %.2f J\n\n", summary.pl_total_power.total);
 
     printf("*** TOTAL SYSTEM POWER ***\n");
-    printf("  Average Power:    %.2f W\n", summary.total.power.avg);
-    printf("  Min Power:        %.2f W\n", summary.total.power.min);
-    printf("  Max Power:        %.2f W\n", summary.total.power.max);
-    printf("  Total Energy:     %.2f J\n", summary.total.power.total);
+    printf("  Average Power:    %.2f W\n", summary.total_power.avg);
+    printf("  Min Power:        %.2f W\n", summary.total_power.min);
+    printf("  Max Power:        %.2f W\n", summary.total_power.max);
+    printf("  Total Energy:     %.2f J\n", summary.total_power.total);
     printf("===============================================\n");
 
     // Print detailed sensor information

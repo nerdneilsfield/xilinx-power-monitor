@@ -152,22 +152,22 @@ void monitorPowerConsumption(std::function<WorkloadStats()> task) {
 
         std::cout << "--- Processing System (PS) ---" << std::endl;
         std::cout << "  Average Power:    " << std::fixed << std::setprecision(2)
-                  << summary.getPS().power.avg << " W" << std::endl;
-        std::cout << "  Min Power:        " << summary.getPS().power.min << " W" << std::endl;
-        std::cout << "  Max Power:        " << summary.getPS().power.max << " W" << std::endl;
-        std::cout << "  Total Energy:     " << summary.getPS().power.total << " J" << std::endl << std::endl;
+                  << summary.ps_total_power.avg << " W" << std::endl;
+        std::cout << "  Min Power:        " << summary.ps_total_power.min << " W" << std::endl;
+        std::cout << "  Max Power:        " << summary.ps_total_power.max << " W" << std::endl;
+        std::cout << "  Total Energy:     " << summary.ps_total_power.total << " J" << std::endl << std::endl;
 
         std::cout << "--- Programmable Logic (PL) ---" << std::endl;
-        std::cout << "  Average Power:    " << summary.getPL().power.avg << " W" << std::endl;
-        std::cout << "  Min Power:        " << summary.getPL().power.min << " W" << std::endl;
-        std::cout << "  Max Power:        " << summary.getPL().power.max << " W" << std::endl;
-        std::cout << "  Total Energy:     " << summary.getPL().power.total << " J" << std::endl << std::endl;
+        std::cout << "  Average Power:    " << summary.pl_total_power.avg << " W" << std::endl;
+        std::cout << "  Min Power:        " << summary.pl_total_power.min << " W" << std::endl;
+        std::cout << "  Max Power:        " << summary.pl_total_power.max << " W" << std::endl;
+        std::cout << "  Total Energy:     " << summary.pl_total_power.total << " J" << std::endl << std::endl;
 
         std::cout << "*** TOTAL SYSTEM POWER ***" << std::endl;
-        std::cout << "  Average Power:    " << summary.getTotal().power.avg << " W" << std::endl;
-        std::cout << "  Min Power:        " << summary.getTotal().power.min << " W" << std::endl;
-        std::cout << "  Max Power:        " << summary.getTotal().power.max << " W" << std::endl;
-        std::cout << "  Total Energy:     " << summary.getTotal().power.total << " J" << std::endl;
+        std::cout << "  Average Power:    " << summary.total_power.avg << " W" << std::endl;
+        std::cout << "  Min Power:        " << summary.total_power.min << " W" << std::endl;
+        std::cout << "  Max Power:        " << summary.total_power.max << " W" << std::endl;
+        std::cout << "  Total Energy:     " << summary.total_power.total << " J" << std::endl;
         std::cout << "===============================================" << std::endl;
 
         // Print detailed sensor information
