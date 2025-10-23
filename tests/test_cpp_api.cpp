@@ -256,6 +256,90 @@ TEST_F(JetPwMonCPPAPITest, SensorTypesEnumCheck)
         EXPECT_EQ(2, PM_SENSOR_TYPE_SYSTEM);
 }
 
+// Test case: Power summary retrieval using C++ API
+TEST_F(JetPwMonCPPAPITest, PowerSummary)
+{
+        ASSERT_NO_THROW({
+                xlnpwmon::PowerMonitor monitor;
+
+                // Start sampling to collect data
+                ASSERT_NO_THROW(monitor.setSamplingFrequency(10)) << "setSamplingFrequency threw unexpectedly.";
+                ASSERT_NO_THROW(monitor.startSampling()) << "startSampling threw unexpectedly.";
+
+                // Wait for samples
+                SleepForSampling(500);
+
+                // Get power summary
+                pm_power_summary_t summary;
+                ASSERT_NO_THROW(summary = monitor.getPowerSummary()) << "getPowerSummary threw unexpectedly.";
+
+                // Verify summary data
+                EXPECT_GE(summary.ps_total_power, 0.0) << "PS total power should be non-negative.";
+                EXPECT_GE(summary.pl_total_power, 0.0) << "PL total power should be non-negative.";
+                EXPECT_GE(summary.total_power, 0.0) << "Total power should be non-negative.";
+
+                // Total power should be sum of PS and PL
+                EXPECT_NEAR(summary.total_power, summary.ps_total_power + summary.pl_total_power, 0.001)
+                    << "Total power should equal PS + PL power.";
+
+                // Stop sampling
+                ASSERT_NO_THROW(monitor.stopSampling()) << "stopSampling threw unexpectedly.";
+        }) << "Test setup failed during PowerMonitor creation";
+}
+
+// Test case: Power summary statistics retrieval using C++ API
+TEST_F(JetPwMonCPPAPITest, PowerSummaryStats)
+{
+        ASSERT_NO_THROW({
+                xlnpwmon::PowerMonitor monitor;
+
+                // Reset statistics
+                ASSERT_NO_THROW(monitor.resetStatistics()) << "resetStatistics threw unexpectedly.";
+
+                // Start sampling to collect statistics
+                ASSERT_NO_THROW(monitor.setSamplingFrequency(10)) << "setSamplingFrequency threw unexpectedly.";
+                ASSERT_NO_THROW(monitor.startSampling()) << "startSampling threw unexpectedly.";
+
+                // Wait for samples
+                SleepForSampling(500);
+
+                // Stop sampling
+                ASSERT_NO_THROW(monitor.stopSampling()) << "stopSampling threw unexpectedly.";
+
+                // Get power summary statistics
+                pm_power_summary_stats_t summary_stats;
+                ASSERT_NO_THROW(summary_stats = monitor.getPowerSummaryStats()) << "getPowerSummaryStats threw unexpectedly.";
+
+                // Verify PS total power statistics
+                EXPECT_GT(summary_stats.ps_total_power.count, 0) << "PS total power sample count should be > 0.";
+                if (summary_stats.ps_total_power.count > 0) {
+                        EXPECT_LE(summary_stats.ps_total_power.min, summary_stats.ps_total_power.avg);
+                        EXPECT_LE(summary_stats.ps_total_power.avg, summary_stats.ps_total_power.max);
+                        EXPECT_GE(summary_stats.ps_total_power.min, 0.0);
+                }
+
+                // Verify PL total power statistics
+                EXPECT_GT(summary_stats.pl_total_power.count, 0) << "PL total power sample count should be > 0.";
+                if (summary_stats.pl_total_power.count > 0) {
+                        EXPECT_LE(summary_stats.pl_total_power.min, summary_stats.pl_total_power.avg);
+                        EXPECT_LE(summary_stats.pl_total_power.avg, summary_stats.pl_total_power.max);
+                        EXPECT_GE(summary_stats.pl_total_power.min, 0.0);
+                }
+
+                // Verify total power statistics
+                EXPECT_GT(summary_stats.total_power.count, 0) << "Total power sample count should be > 0.";
+                if (summary_stats.total_power.count > 0) {
+                        EXPECT_LE(summary_stats.total_power.min, summary_stats.total_power.avg);
+                        EXPECT_LE(summary_stats.total_power.avg, summary_stats.total_power.max);
+                        EXPECT_GE(summary_stats.total_power.min, 0.0);
+                }
+
+                // All should have same sample count
+                EXPECT_EQ(summary_stats.ps_total_power.count, summary_stats.pl_total_power.count);
+                EXPECT_EQ(summary_stats.ps_total_power.count, summary_stats.total_power.count);
+        }) << "Test setup failed during PowerMonitor creation";
+}
+
 // Main function to run all Google Tests
 // int main(int argc, char **argv) {
 //     ::testing::InitGoogleTest(&argc, argv);

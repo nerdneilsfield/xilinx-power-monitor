@@ -208,3 +208,107 @@ fn test_sensor_types() {
     assert_eq!(SensorType::I2C as u32, 1);
     assert_eq!(SensorType::System as u32, 2);
 }
+
+/// Test power summary retrieval
+#[test]
+fn test_power_summary() {
+    println!("\n=== Running test_power_summary ===");
+    let monitor = PowerMonitor::new().unwrap();
+
+    // Set sampling frequency and start sampling
+    monitor.set_sampling_frequency(10).unwrap();
+    monitor.start_sampling().unwrap();
+
+    // Wait for data collection
+    thread::sleep(Duration::from_millis(500));
+
+    // Get power summary
+    let summary = monitor.get_power_summary().unwrap();
+
+    // Verify summary data
+    println!("PS Total Power: {} W", summary.ps_total_power);
+    println!("PL Total Power: {} W", summary.pl_total_power);
+    println!("Total Power: {} W", summary.total_power);
+
+    assert!(summary.ps_total_power >= 0.0, "PS total power should be non-negative");
+    assert!(summary.pl_total_power >= 0.0, "PL total power should be non-negative");
+    assert!(summary.total_power >= 0.0, "Total power should be non-negative");
+
+    // Total power should be approximately sum of PS and PL
+    let expected_total = summary.ps_total_power + summary.pl_total_power;
+    let diff = (summary.total_power - expected_total).abs();
+    assert!(diff < 0.001, "Total power should equal PS + PL power (diff: {})", diff);
+
+    monitor.stop_sampling().unwrap();
+}
+
+/// Test power summary statistics retrieval
+#[test]
+fn test_power_summary_stats() {
+    println!("\n=== Running test_power_summary_stats ===");
+    let monitor = PowerMonitor::new().unwrap();
+
+    // Reset statistics
+    monitor.reset_statistics().unwrap();
+
+    // Set sampling frequency and start sampling
+    monitor.set_sampling_frequency(10).unwrap();
+    monitor.start_sampling().unwrap();
+
+    // Wait for data collection
+    thread::sleep(Duration::from_millis(500));
+
+    // Stop sampling
+    monitor.stop_sampling().unwrap();
+
+    // Get power summary statistics
+    let summary_stats = monitor.get_power_summary_stats().unwrap();
+
+    // Verify PS total power statistics
+    println!("PS Total Power Stats - Min: {}, Max: {}, Avg: {}, Count: {}",
+             summary_stats.ps_total_power.min,
+             summary_stats.ps_total_power.max,
+             summary_stats.ps_total_power.avg,
+             summary_stats.ps_total_power.count);
+
+    assert!(summary_stats.ps_total_power.count > 0, "PS total power sample count should be > 0");
+    if summary_stats.ps_total_power.count > 0 {
+        assert!(summary_stats.ps_total_power.min <= summary_stats.ps_total_power.avg);
+        assert!(summary_stats.ps_total_power.avg <= summary_stats.ps_total_power.max);
+        assert!(summary_stats.ps_total_power.min >= 0.0);
+    }
+
+    // Verify PL total power statistics
+    println!("PL Total Power Stats - Min: {}, Max: {}, Avg: {}, Count: {}",
+             summary_stats.pl_total_power.min,
+             summary_stats.pl_total_power.max,
+             summary_stats.pl_total_power.avg,
+             summary_stats.pl_total_power.count);
+
+    assert!(summary_stats.pl_total_power.count > 0, "PL total power sample count should be > 0");
+    if summary_stats.pl_total_power.count > 0 {
+        assert!(summary_stats.pl_total_power.min <= summary_stats.pl_total_power.avg);
+        assert!(summary_stats.pl_total_power.avg <= summary_stats.pl_total_power.max);
+        assert!(summary_stats.pl_total_power.min >= 0.0);
+    }
+
+    // Verify total power statistics
+    println!("Total Power Stats - Min: {}, Max: {}, Avg: {}, Count: {}",
+             summary_stats.total_power.min,
+             summary_stats.total_power.max,
+             summary_stats.total_power.avg,
+             summary_stats.total_power.count);
+
+    assert!(summary_stats.total_power.count > 0, "Total power sample count should be > 0");
+    if summary_stats.total_power.count > 0 {
+        assert!(summary_stats.total_power.min <= summary_stats.total_power.avg);
+        assert!(summary_stats.total_power.avg <= summary_stats.total_power.max);
+        assert!(summary_stats.total_power.min >= 0.0);
+    }
+
+    // All should have same sample count
+    assert_eq!(summary_stats.ps_total_power.count, summary_stats.pl_total_power.count,
+               "PS and PL should have same sample count");
+    assert_eq!(summary_stats.ps_total_power.count, summary_stats.total_power.count,
+               "PS and Total should have same sample count");
+}

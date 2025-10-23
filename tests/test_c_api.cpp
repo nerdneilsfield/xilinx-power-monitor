@@ -247,6 +247,93 @@ TEST_F(JetPwMonCAPITest, SensorTypesEnum) {
     // Add checks if more types are defined
 }
 
+// Test case: Power summary retrieval
+TEST_F(JetPwMonCAPITest, PowerSummary) {
+    pm_error_t err;
+    pm_power_summary_t summary;
+
+    // Start sampling to collect data
+    err = pm_set_sampling_frequency(handle_, 10);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to set sampling frequency: " << pm_error_string(err);
+    err = pm_start_sampling(handle_);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to start sampling: " << pm_error_string(err);
+
+    // Wait for samples
+    SleepForSampling(500);
+
+    // Get power summary
+    err = pm_get_power_summary(handle_, &summary);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to get power summary: " << pm_error_string(err);
+
+    // Verify summary data
+    EXPECT_GE(summary.ps_total_power, 0.0) << "PS total power should be non-negative.";
+    EXPECT_GE(summary.pl_total_power, 0.0) << "PL total power should be non-negative.";
+    EXPECT_GE(summary.total_power, 0.0) << "Total power should be non-negative.";
+
+    // Total power should be sum of PS and PL
+    EXPECT_NEAR(summary.total_power, summary.ps_total_power + summary.pl_total_power, 0.001)
+        << "Total power should equal PS + PL power.";
+
+    // Stop sampling
+    err = pm_stop_sampling(handle_);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to stop sampling: " << pm_error_string(err);
+}
+
+// Test case: Power summary statistics retrieval
+TEST_F(JetPwMonCAPITest, PowerSummaryStats) {
+    pm_error_t err;
+    pm_power_summary_stats_t summary_stats;
+
+    // Reset statistics
+    err = pm_reset_statistics(handle_);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to reset statistics: " << pm_error_string(err);
+
+    // Start sampling to collect statistics
+    err = pm_set_sampling_frequency(handle_, 10);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to set sampling frequency: " << pm_error_string(err);
+    err = pm_start_sampling(handle_);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to start sampling: " << pm_error_string(err);
+
+    // Wait for samples
+    SleepForSampling(500);
+
+    // Stop sampling
+    err = pm_stop_sampling(handle_);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to stop sampling: " << pm_error_string(err);
+
+    // Get power summary statistics
+    err = pm_get_power_summary_stats(handle_, &summary_stats);
+    ASSERT_EQ(PM_SUCCESS, err) << "Failed to get power summary stats: " << pm_error_string(err);
+
+    // Verify PS total power statistics
+    EXPECT_GT(summary_stats.ps_total_power.count, 0) << "PS total power sample count should be > 0.";
+    if (summary_stats.ps_total_power.count > 0) {
+        EXPECT_LE(summary_stats.ps_total_power.min, summary_stats.ps_total_power.avg);
+        EXPECT_LE(summary_stats.ps_total_power.avg, summary_stats.ps_total_power.max);
+        EXPECT_GE(summary_stats.ps_total_power.min, 0.0);
+    }
+
+    // Verify PL total power statistics
+    EXPECT_GT(summary_stats.pl_total_power.count, 0) << "PL total power sample count should be > 0.";
+    if (summary_stats.pl_total_power.count > 0) {
+        EXPECT_LE(summary_stats.pl_total_power.min, summary_stats.pl_total_power.avg);
+        EXPECT_LE(summary_stats.pl_total_power.avg, summary_stats.pl_total_power.max);
+        EXPECT_GE(summary_stats.pl_total_power.min, 0.0);
+    }
+
+    // Verify total power statistics
+    EXPECT_GT(summary_stats.total_power.count, 0) << "Total power sample count should be > 0.";
+    if (summary_stats.total_power.count > 0) {
+        EXPECT_LE(summary_stats.total_power.min, summary_stats.total_power.avg);
+        EXPECT_LE(summary_stats.total_power.avg, summary_stats.total_power.max);
+        EXPECT_GE(summary_stats.total_power.min, 0.0);
+    }
+
+    // All should have same sample count
+    EXPECT_EQ(summary_stats.ps_total_power.count, summary_stats.pl_total_power.count);
+    EXPECT_EQ(summary_stats.ps_total_power.count, summary_stats.total_power.count);
+}
+
 
 // Main function to run all tests
 // int main(int argc, char **argv) {
