@@ -82,7 +82,7 @@ endif()
 
 option(BUILD_EXAMPLES "Build examples" OFF)
 option(USE_OMP "Use OpenMP" OFF)
-option(USE_EIGEN "Use Eigen" ON)
+option(USE_EIGEN "Use Eigen" OFF)
 if(BUILD_EXAMPLES)
     # find omp 
     find_package(OpenMP REQUIRED)

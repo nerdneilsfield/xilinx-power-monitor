@@ -113,7 +113,8 @@ jobs:
             -DBUILD_CPP_BINDINGS=ON \
             -DBUILD_CLI=ON \
             -DBUILD_TESTS=OFF \
-            -DBUILD_EXAMPLES=ON \
+            -DUSE_EIGEN=OFF \
+            -DBUILD_EXAMPLES=OFF \
             ..
 
           # Build
