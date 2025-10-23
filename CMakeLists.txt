@@ -261,6 +261,9 @@ set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 # 禁用自动依赖检测以避免在非标准系统上的依赖问题
 set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
 set(CPACK_RPM_PACKAGE_AUTOPROV OFF)
+# 禁用 RPM 自动 strip（避免交叉编译时使用错误的 strip 工具）
+set(CPACK_RPM_SPEC_MORE_DEFINE "%define __strip /bin/true
+%define debug_package %{nil}")
 
 # 只保留 dev 组件
 set(CPACK_DEB_COMPONENT_INSTALL ON)
