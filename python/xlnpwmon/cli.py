@@ -136,8 +136,8 @@ def generate_table(
         sensor_count = data_dict.get('sensor_count', 0)
 
         if sensors_list and sensor_count > 0:
-            # === Processing System (PS) Section ===
-            table.add_row("[bold cyan]=== Processing System (PS) ===[/bold cyan]", "", "", "")
+            # = Processing System (PS) Section =
+            table.add_row("[bold cyan]= Processing System (PS) =[/bold cyan]", "", "", "")
 
             for sensor_dict in sensors_list:
                 name = sensor_dict.get('name', 'Unknown')
@@ -149,9 +149,9 @@ def generate_table(
                         f"{sensor_dict.get('current', float('nan')):.2f}",
                     )
 
-            # === Programmable Logic (PL) Section ===
+            # = Programmable Logic (PL) Section =
             table.add_section()
-            table.add_row("[bold magenta]=== Programmable Logic (PL) ===[/bold magenta]", "", "", "")
+            table.add_row("[bold magenta]= Programmable Logic (PL) =[/bold magenta]", "", "", "")
 
             for sensor_dict in sensors_list:
                 name = sensor_dict.get('name', 'Unknown')
@@ -163,9 +163,9 @@ def generate_table(
                         f"{sensor_dict.get('current', float('nan')):.2f}",
                     )
 
-            # === Power Summary Section (Highlighted) ===
+            # = Power Summary Section (Highlighted) =
             table.add_section()
-            table.add_row("[bold reverse]=== POWER SUMMARY ===[/bold reverse]", "", "", "")
+            table.add_row("[bold reverse]= POWER SUMMARY =[/bold reverse]", "", "", "")
 
             for sensor_dict in sensors_list:
                 name = sensor_dict.get('name', 'Unknown')
