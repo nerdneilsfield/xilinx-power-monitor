@@ -1497,6 +1497,45 @@ make
 sudo make install
 ```
 
+#### 作为 CMake 子项目集成（推荐用于交叉编译）
+
+对于使用交叉编译的 Xilinx/嵌入式项目，最简单的方法是将 xlnpwmon 集成为 CMake 子项目：
+
+```bash
+# 将 xlnpwmon 添加到你的项目
+mkdir -p 3rd
+cd 3rd
+git clone https://github.com/nerdneilsfield/xilinx-power-monitor.git xlnpwmon
+cd ..
+```
+
+然后在你的 `CMakeLists.txt` 中：
+
+```cmake
+# 在添加子目录之前禁用可选组件
+set(XLNPWMON_BUILD_CLI OFF CACHE BOOL "禁用 CLI" FORCE)
+set(XLNPWMON_BUILD_PYTHON_BINDINGS OFF CACHE BOOL "禁用 Python 绑定" FORCE)
+set(XLNPWMON_BUILD_EXAMPLES OFF CACHE BOOL "禁用示例" FORCE)
+set(XLNPWMON_USE_EIGEN OFF CACHE BOOL "禁用 Eigen" FORCE)
+set(XLNPWMON_BUILD_TESTS OFF CACHE BOOL "禁用测试" FORCE)
+set(XLNPWMON_BUILD_CPP_BINDINGS ON CACHE BOOL "启用 C++ 绑定" FORCE)
+
+# 将 xlnpwmon 添加为子目录
+add_subdirectory(3rd/xlnpwmon)
+
+# 在你的目标中链接 xlnpwmon
+add_executable(your_app main.cpp)
+target_link_libraries(your_app PRIVATE xlnpwmon::xlnpwmon)  # C 库
+# 或者
+target_link_libraries(your_app PRIVATE xlnpwmon::xlnpwmon_cpp)  # C++ 库
+```
+
+这种方法的优点：
+- 自动使用你的交叉编译工具链
+- 避免依赖问题（无需 ncurses、Python 等）
+- 简化构建过程
+- 与 PetaLinux/Yocto 构建无缝集成
+
 #### Python 绑定
 
 ```bash

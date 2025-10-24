@@ -253,7 +253,7 @@ sequenceDiagram
 
     # Release build enabling specific bindings
     # cmake .. -DCMAKE_BUILD_TYPE=Release \
-    #          -DBUILD_PYTHON_BINDINGS=ON \
+    #          -DXLNPWMON_BUILD_PYTHON_BINDINGS=ON \
     #          -DBUILD_RUST_BINDINGS=OFF \
     #          -DCMAKE_INSTALL_PREFIX=/usr/local
     ```
@@ -261,7 +261,7 @@ sequenceDiagram
     *Common CMake Options:*
         *`CMAKE_BUILD_TYPE`: `Debug`, `Release`, `RelWithDebInfo`, `MinSizeRel`.
         * `BUILD_SHARED_LIBS`: `ON` (default) or `OFF` (for static core library).
-        *`BUILD_PYTHON_BINDINGS`: `ON` or `OFF` (default might be ON).
+        *`XLNPWMON_BUILD_PYTHON_BINDINGS`: `ON` or `OFF` (default might be ON).
         * `BUILD_RUST_BINDINGS`: `ON` or `OFF`.
         *`BUILD_ZIG_BINDINGS`: `ON` or `OFF`.
         * `CMAKE_INSTALL_PREFIX`: Where `make install` will place files.

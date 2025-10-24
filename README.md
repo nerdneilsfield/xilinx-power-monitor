@@ -1497,6 +1497,45 @@ make
 sudo make install
 ```
 
+#### Integration as CMake Subproject (Recommended for Cross-Compilation)
+
+For Xilinx/embedded projects using cross-compilation, the easiest way is to integrate xlnpwmon as a CMake subproject:
+
+```bash
+# Add xlnpwmon to your project
+mkdir -p 3rd
+cd 3rd
+git clone https://github.com/nerdneilsfield/xilinx-power-monitor.git xlnpwmon
+cd ..
+```
+
+Then in your `CMakeLists.txt`:
+
+```cmake
+# Disable optional components before adding subdirectory
+set(XLNPWMON_BUILD_CLI OFF CACHE BOOL "Disable CLI" FORCE)
+set(XLNPWMON_BUILD_PYTHON_BINDINGS OFF CACHE BOOL "Disable Python bindings" FORCE)
+set(XLNPWMON_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples" FORCE)
+set(XLNPWMON_USE_EIGEN OFF CACHE BOOL "Disable Eigen" FORCE)
+set(XLNPWMON_BUILD_TESTS OFF CACHE BOOL "Disable tests" FORCE)
+set(XLNPWMON_BUILD_CPP_BINDINGS ON CACHE BOOL "Enable C++ bindings" FORCE)
+
+# Add xlnpwmon as subdirectory
+add_subdirectory(3rd/xlnpwmon)
+
+# Link against xlnpwmon in your target
+add_executable(your_app main.cpp)
+target_link_libraries(your_app PRIVATE xlnpwmon::xlnpwmon)  # For C library
+# or
+target_link_libraries(your_app PRIVATE xlnpwmon::xlnpwmon_cpp)  # For C++ library
+```
+
+This approach:
+- Automatically uses your cross-compilation toolchain
+- Avoids dependency issues (no ncurses, Python, etc.)
+- Simplifies the build process
+- Works seamlessly with PetaLinux/Yocto builds
+
 #### Python Bindings
 
 ```bash

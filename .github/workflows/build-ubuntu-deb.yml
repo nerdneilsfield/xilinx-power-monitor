@@ -123,12 +123,12 @@ on:
 #           echo "Running CMake configuration..."
 #           cmake ${{ env.CMAKE_ARGS }} \
 #                 -DCMAKE_BUILD_TYPE=Release \
-#                 -DBUILD_PYTHON_BINDINGS=OFF \
-#                 -DBUILD_CPP_BINDINGS=ON \
-#                 -DBUILD_CLI=ON \
-#                 -DBUILD_TESTS=OFF \
-#                 -DUSE_EIGEN=OFF \
-#                 -DBUILD_EXAMPLES=OFF \
+#                 -DXLNPWMON_BUILD_PYTHON_BINDINGS=OFF \
+#                 -DXLNPWMON_BUILD_CPP_BINDINGS=ON \
+#                 -DXLNPWMON_BUILD_CLI=ON \
+#                 -DXLNPWMON_BUILD_TESTS=OFF \
+#                 -DXLNPWMON_USE_EIGEN=OFF \
+#                 -DXLNPWMON_BUILD_EXAMPLES=OFF \
 #                 ..
 
 #       - name: Build

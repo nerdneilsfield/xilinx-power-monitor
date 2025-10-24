@@ -134,12 +134,12 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCURSES_INCLUDE_PATH=$ZYNQMP_SYSROOT/usr/include \
             -DCURSES_LIBRARY=$ZYNQMP_SYSROOT/usr/lib/libncurses.so \
-            -DBUILD_PYTHON_BINDINGS=OFF \
-            -DBUILD_CPP_BINDINGS=ON \
-            -DBUILD_CLI=ON \
-            -DBUILD_TESTS=OFF \
-            -DUSE_EIGEN=OFF \
-            -DBUILD_EXAMPLES=OFF \
+            -DXLNPWMON_BUILD_PYTHON_BINDINGS=OFF \
+            -DXLNPWMON_BUILD_CPP_BINDINGS=ON \
+            -DXLNPWMON_BUILD_CLI=ON \
+            -DXLNPWMON_BUILD_TESTS=OFF \
+            -DXLNPWMON_USE_EIGEN=OFF \
+            -DXLNPWMON_BUILD_EXAMPLES=OFF \
             ..
 
           # Build

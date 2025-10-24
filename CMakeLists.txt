@@ -39,8 +39,8 @@ target_link_libraries(xlnpwmon PRIVATE pthread)
 add_library(xlnpwmon_static STATIC src/xlnpwmon.c)
 target_link_libraries(xlnpwmon_static PRIVATE pthread)
 
-option(BUILD_CLI "Build CLI" ON)
-if(BUILD_CLI)
+option(XLNPWMON_BUILD_CLI "Build CLI" ON)
+if(XLNPWMON_BUILD_CLI)
     find_package(Curses REQUIRED)
     if(CURSES_FOUND)
         add_executable(xlnpwmon_cli src/xlnpwmon_cli.c)
@@ -51,9 +51,9 @@ if(BUILD_CLI)
     endif()
 endif()
 
-option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+option(XLNPWMON_BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 option(SCIKIT "Build with scikit-build" ON)
-if(BUILD_PYTHON_BINDINGS)
+if(XLNPWMON_BUILD_PYTHON_BINDINGS)
     find_package(Python 3.7 COMPONENTS Interpreter Development.Module REQUIRED)
     if(SKBUILD)
         find_package(pybind11 CONFIG REQUIRED)
@@ -72,42 +72,42 @@ if(BUILD_PYTHON_BINDINGS)
     )
 endif()
 
-option(BUILD_CPP_BINDINGS "Build C++ bindings" ON)
-if(BUILD_CPP_BINDINGS)
+option(XLNPWMON_BUILD_CPP_BINDINGS "Build C++ bindings" ON)
+if(XLNPWMON_BUILD_CPP_BINDINGS)
     add_library(xlnpwmon_cpp SHARED src/xlnpwmon++.cpp)
     target_link_libraries(xlnpwmon_cpp PRIVATE xlnpwmon_static)
     add_library(xlnpwmon_static_cpp STATIC src/xlnpwmon++.cpp)
     target_link_libraries(xlnpwmon_static_cpp PRIVATE xlnpwmon_static)
 endif()
 
-option(BUILD_EXAMPLES "Build examples" OFF)
+option(XLNPWMON_BUILD_EXAMPLES "Build examples" OFF)
 option(USE_OMP "Use OpenMP" OFF)
-option(USE_EIGEN "Use Eigen" OFF)
-if(BUILD_EXAMPLES)
+option(XLNPWMON_USE_EIGEN "Use Eigen" OFF)
+if(XLNPWMON_BUILD_EXAMPLES)
     # find omp 
     find_package(OpenMP REQUIRED)
     add_executable(example_c example/c_example.c)
     target_link_libraries(example_c PRIVATE xlnpwmon_static OpenMP::OpenMP_CXX)
 
-    if(USE_EIGEN)
+    if(XLNPWMON_USE_EIGEN)
         find_package(Eigen3 REQUIRED)
         add_executable(matrix_multiply example/matrix_multiply.cpp)
         target_link_libraries(matrix_multiply PRIVATE xlnpwmon_static Eigen3::Eigen)
     endif()
 
-    if(BUILD_CPP_BINDINGS)
+    if(XLNPWMON_BUILD_CPP_BINDINGS)
         add_executable(example_cpp example/cpp_example.cpp)
         target_link_libraries(example_cpp PRIVATE xlnpwmon_static_cpp OpenMP::OpenMP_CXX)
 
-        if(USE_EIGEN)
+        if(XLNPWMON_USE_EIGEN)
             add_executable(matrix_multiply_cpp example/matrix_multiply_cpp.cpp)
             target_link_libraries(matrix_multiply_cpp PRIVATE xlnpwmon_static_cpp Eigen3::Eigen)
         endif()
     endif()
 endif()
 
-option(BUILD_TESTS "Build tests" OFF)
-if(BUILD_TESTS)
+option(XLNPWMON_BUILD_TESTS "Build tests" OFF)
+if(XLNPWMON_BUILD_TESTS)
     include(FetchContent)
     FetchContent_Declare(
         googletest
@@ -119,7 +119,7 @@ if(BUILD_TESTS)
     add_executable(c_api_test tests/test_c_api.cpp)
     target_link_libraries(c_api_test PRIVATE xlnpwmon_static GTest::gtest_main pthread)
     add_test(NAME c_api_test COMMAND c_api_test)
-    if(BUILD_CPP_BINDINGS)
+    if(XLNPWMON_BUILD_CPP_BINDINGS)
         add_executable(cpp_api_test tests/test_cpp_api.cpp)
         target_link_libraries(cpp_api_test PRIVATE xlnpwmon_static_cpp GTest::gtest_main pthread)
         add_test(NAME cpp_api_test COMMAND cpp_api_test)
@@ -142,7 +142,7 @@ install(TARGETS
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-if(BUILD_CPP_BINDINGS)
+if(XLNPWMON_BUILD_CPP_BINDINGS)
     install(TARGETS
         xlnpwmon_cpp xlnpwmon_static_cpp
         EXPORT xlnpwmon-targets
@@ -194,33 +194,33 @@ install(DIRECTORY include/xlnpwmon
 )
 
 # 安装可执行文件
-if(BUILD_CLI)
+if(XLNPWMON_BUILD_CLI)
     install(TARGETS xlnpwmon_cli
         RUNTIME DESTINATION bin
     )
 endif()
 
-if(BUILD_PYTHON_BINDINGS)
+if(XLNPWMON_BUILD_PYTHON_BINDINGS)
     install(TARGETS xlnpwmon_py
         LIBRARY DESTINATION lib/python3/dist-packages/xlnpwmon
     )
 endif()
 
 # 安装示例程序
-if(BUILD_EXAMPLES)
+if(XLNPWMON_BUILD_EXAMPLES)
     install(TARGETS example_c
         RUNTIME DESTINATION bin
     )
-    if(USE_EIGEN)
+    if(XLNPWMON_USE_EIGEN)
         install(TARGETS matrix_multiply
             RUNTIME DESTINATION bin
         )
     endif()
-    if(BUILD_CPP_BINDINGS)
+    if(XLNPWMON_BUILD_CPP_BINDINGS)
         install(TARGETS example_cpp
             RUNTIME DESTINATION bin
         )
-        if(USE_EIGEN)
+        if(XLNPWMON_USE_EIGEN)
             install(TARGETS matrix_multiply_cpp
                 RUNTIME DESTINATION bin
             )
@@ -238,16 +238,16 @@ set(CPACK_PACKAGE_CONTACT "dengqi935@gmail.com")
 
 # 设置依赖关系
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.17)")
-if(BUILD_PYTHON_BINDINGS)
+if(XLNPWMON_BUILD_PYTHON_BINDINGS)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, python3-dev")
 endif()
-if(BUILD_EXAMPLES AND USE_EIGEN)
+if(XLNPWMON_BUILD_EXAMPLES AND XLNPWMON_USE_EIGEN)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libeigen3-dev")
 endif()
 if(USE_OMP)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libomp-dev")
 endif()
-if(BUILD_CLI)
+if(XLNPWMON_BUILD_CLI)
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libncurses-dev")
 endif()
 
