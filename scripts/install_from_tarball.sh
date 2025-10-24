@@ -67,6 +67,47 @@ if [ -d "$ROOT_DIR/bin" ] && [ "$(ls -A "$ROOT_DIR/bin" 2>/dev/null)" ]; then
     done
 fi
 
+# Install pkg-config files
+if [ -d "$ROOT_DIR/lib/pkgconfig" ] && [ "$(ls -A "$ROOT_DIR/lib/pkgconfig" 2>/dev/null)" ]; then
+    echo -e "${YELLOW}Installing pkg-config files...${NC}"
+    install -d "$PREFIX/lib/pkgconfig"
+    for pc in "$ROOT_DIR/lib/pkgconfig"/*.pc; do
+        if [ -f "$pc" ]; then
+            echo "  Installing $(basename "$pc")"
+            install -m 644 "$pc" "$PREFIX/lib/pkgconfig/"
+        fi
+    done
+fi
+
+# Install CMake configuration files
+if [ -d "$ROOT_DIR/lib/cmake/xlnpwmon" ]; then
+    echo -e "${YELLOW}Installing CMake configuration files...${NC}"
+    install -d "$PREFIX/lib/cmake/xlnpwmon"
+    cp -r "$ROOT_DIR/lib/cmake/xlnpwmon"/* "$PREFIX/lib/cmake/xlnpwmon/"
+    echo "  Installed CMake config files to $PREFIX/lib/cmake/xlnpwmon/"
+fi
+
+# Create ncurses compatibility symlinks if needed
+echo -e "${YELLOW}Checking ncurses compatibility...${NC}"
+# Check if libncursesw.so.6 exists, if not, try to find and link it
+if [ ! -e "$PREFIX/lib/libncursesw.so.6" ]; then
+    # Look for libncursesw5 or other versions
+    NCURSES_LIB=$(find "$PREFIX/lib" -name "libncursesw*.so.*" 2>/dev/null | head -1)
+    if [ -n "$NCURSES_LIB" ]; then
+        echo "  Creating symlink: libncursesw.so.6 -> $(basename $NCURSES_LIB)"
+        ln -sf "$(basename $NCURSES_LIB)" "$PREFIX/lib/libncursesw.so.6"
+        # Also create libncursesw.so if it doesn't exist
+        if [ ! -e "$PREFIX/lib/libncursesw.so" ]; then
+            ln -sf "$(basename $NCURSES_LIB)" "$PREFIX/lib/libncursesw.so"
+        fi
+    else
+        echo -e "  ${YELLOW}Warning: ncursesw library not found. CLI tool may not work.${NC}"
+        echo "  Please install ncurses-dev package or create symlinks manually."
+    fi
+else
+    echo "  ncursesw.so.6 already exists"
+fi
+
 # Update library cache
 echo -e "${YELLOW}Updating library cache...${NC}"
 ldconfig

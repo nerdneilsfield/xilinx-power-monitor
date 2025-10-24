@@ -1,22 +1,74 @@
 # Installation Instructions for ZynqMP Binary Distribution
 
 ## Contents
-- bin/         - Compiled executables
-- lib/         - Compiled libraries (.so and .a)
-- include/     - Header files
-- src/         - Source code
-- README.md    - Project documentation
+- bin/                    - Compiled executables
+- lib/                    - Compiled libraries (.so and .a)
+- lib/pkgconfig/          - pkg-config files
+- lib/cmake/xlnpwmon/     - CMake configuration files
+- include/                - Header files
+- src/                    - Source code
+- install_from_tarball.sh - Installation script
+- README.md               - Project documentation
 
-## Quick Installation
+## Installation Methods
 
-### Install libraries and headers
-sudo cp lib/* /usr/lib/
+### Method 1: Use Installation Script (Recommended for Tarball)
+
+```bash
+# Extract the tarball
+tar xzf xlnpwmon-*-zynqmp-aarch64.tar.gz
+cd xlnpwmon-zynqmp-binary
+
+# Run installation script (installs to /usr by default)
+sudo ./install_from_tarball.sh
+
+# Or install to custom location
+PREFIX=/usr/local sudo -E ./install_from_tarball.sh
+```
+
+### Method 2: Install from RPM Package (Recommended for PetaLinux)
+
+```bash
+# For DNF-based systems (PetaLinux, Fedora, RHEL 8+)
+sudo dnf install libxlnpwmon-*_petalinux-zynqmp-aarch64.rpm
+
+# For YUM-based systems (CentOS 7, RHEL 7)
+sudo yum install libxlnpwmon-*_petalinux-zynqmp-aarch64.rpm
+```
+
+### Method 3: Manual Installation
+
+```bash
+# Extract the tarball
+tar xzf xlnpwmon-*-zynqmp-aarch64.tar.gz
+cd xlnpwmon-zynqmp-binary
+
+# Install libraries and headers
+sudo cp lib/*.so lib/*.a /usr/lib/
+sudo cp lib/pkgconfig/*.pc /usr/lib/pkgconfig/
+sudo cp -r lib/cmake/xlnpwmon /usr/lib/cmake/
 sudo cp -r include/* /usr/include/
 sudo cp bin/* /usr/bin/
 sudo ldconfig
+```
 
-### Or install from RPM package (recommended)
-sudo dnf install libxlnpwmon-*_petalinux-zynqmp-aarch64.rpm
+## Verification
+
+After installation, verify the installation:
+
+```bash
+# Check library
+ldconfig -p | grep xlnpwmon
+
+# Check pkg-config
+pkg-config --modversion xlnpwmon
+
+# Check CLI tool (if installed)
+xlnpwmon_cli --help
+
+# Check headers
+ls /usr/include/xlnpwmon.h
+```
 
 ## Build from Source
 See README.md for build instructions.

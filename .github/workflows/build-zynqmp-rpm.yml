@@ -197,6 +197,24 @@ jobs:
           cp build_zynqmp/libxlnpwmon_cpp.so $DIST_DIR/lib/ 2>/dev/null || true
           cp build_zynqmp/libxlnpwmon_static_cpp.a $DIST_DIR/lib/ 2>/dev/null || true
 
+          # Copy pkg-config files
+          mkdir -p $DIST_DIR/lib/pkgconfig
+          if [ -f build_zynqmp/xlnpwmon.pc ]; then
+            cp build_zynqmp/xlnpwmon.pc $DIST_DIR/lib/pkgconfig/
+          fi
+
+          # Copy CMake configuration files
+          mkdir -p $DIST_DIR/lib/cmake/xlnpwmon
+          if [ -d build_zynqmp/cmake ]; then
+            cp -r build_zynqmp/cmake/* $DIST_DIR/lib/cmake/xlnpwmon/ 2>/dev/null || true
+          fi
+          # Also check for CMake files in build root
+          for cmake_file in xlnpwmonConfig.cmake xlnpwmonConfigVersion.cmake xlnpwmonTargets.cmake xlnpwmonTargets-release.cmake; do
+            if [ -f build_zynqmp/$cmake_file ]; then
+              cp build_zynqmp/$cmake_file $DIST_DIR/lib/cmake/xlnpwmon/
+            fi
+          done
+
           # Create tarball with version info
           VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
           TARBALL_NAME="xlnpwmon-${VERSION}-zynqmp-aarch64.tar.gz"
