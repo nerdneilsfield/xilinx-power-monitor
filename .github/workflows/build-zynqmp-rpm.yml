@@ -1,266 +1,266 @@
 name: Build RPM Package for ZynqMP
 
 on:
-  push:
-    tags: ["v*"]
-  workflow_dispatch:
+    push:
+        tags: ["v*"]
+    workflow_dispatch:
 
 jobs:
-  build_zynqmp_rpm:
-    name: Build RPM for PetaLinux ZynqMP (ARM64)
-    runs-on: ubuntu-22.04
+    build_zynqmp_rpm:
+        name: Build RPM for PetaLinux ZynqMP (ARM64)
+        runs-on: ubuntu-22.04
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            cmake \
-            rpm \
-            file \
-            wget
+            - name: Install cross-compilation toolchain
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    gcc-aarch64-linux-gnu \
+                    g++-aarch64-linux-gnu \
+                    cmake \
+                    rpm \
+                    file \
+                    wget
 
-          # Verify toolchain installation
-          which aarch64-linux-gnu-gcc
-          which aarch64-linux-gnu-g++
-          aarch64-linux-gnu-gcc --version
-          aarch64-linux-gnu-g++ --version
+                  # Verify toolchain installation
+                  which aarch64-linux-gnu-gcc
+                  which aarch64-linux-gnu-g++
+                  aarch64-linux-gnu-gcc --version
+                  aarch64-linux-gnu-g++ --version
 
-      - name: Cache ARM64 sysroot
-        id: cache-sysroot
-        uses: actions/cache@v4
-        with:
-          path: ~/aarch64-sysroot
-          key: aarch64-sysroot-ncurses-6.2-${{ runner.os }}
+            - name: Cache ARM64 sysroot
+              id: cache-sysroot
+              uses: actions/cache@v4
+              with:
+                  path: ~/aarch64-sysroot
+                  key: aarch64-sysroot-ncurses-5.9-${{ runner.os }}
 
-      - name: Setup ARM64 sysroot with ncurses 6.2
-        if: steps.cache-sysroot.outputs.cache-hit != 'true'
-        run: |
-          set -e
+            - name: Setup ARM64 sysroot with ncurses 5.9
+              if: steps.cache-sysroot.outputs.cache-hit != 'true'
+              run: |
+                  set -e
 
-          # Create sysroot directory
-          mkdir -p $HOME/aarch64-sysroot/usr/{include,lib}
+                  # Create sysroot directory
+                  mkdir -p $HOME/aarch64-sysroot/usr/{include,lib}
 
-          # Download and build ncurses 6.2 for ARM64
-          cd $HOME
-          wget https://ftp.gnu.org/gnu/ncurses/ncurses-6.2.tar.gz
-          tar xzf ncurses-6.2.tar.gz
-          cd ncurses-6.2
+                  # Download and build ncurses 5.9 for ARM64
+                  cd $HOME
+                  wget https://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz
+                  tar xzf ncurses-5.9.tar.gz
+                  cd ncurses-5.9
 
-          # Configure for ARM64 cross-compilation
-          ./configure \
-            --host=aarch64-linux-gnu \
-            --prefix=/usr \
-            --with-shared \
-            --enable-widec \
-            --with-termlib \
-            --without-debug \
-            --without-tests \
-            --without-progs
+                  # Configure for ARM64 cross-compilation
+                  ./configure \
+                    --host=aarch64-linux-gnu \
+                    --prefix=/usr \
+                    --with-shared \
+                    --enable-widec \
+                    --with-termlib \
+                    --without-debug \
+                    --without-tests \
+                    --without-progs
 
-          make -j$(nproc)
+                  make -j$(nproc)
 
-          # Manually copy headers and libraries to sysroot (skip progs to avoid strip issue)
-          echo "Copying ncurses headers and libraries to sysroot..."
+                  # Manually copy headers and libraries to sysroot (skip progs to avoid strip issue)
+                  echo "Copying ncurses headers and libraries to sysroot..."
 
-          # Copy headers - ncurses generates headers in include/ directory
-          echo "Available headers:"
-          ls -la include/*.h
+                  # Copy headers - ncurses generates headers in include/ directory
+                  echo "Available headers:"
+                  ls -la include/*.h
 
-          # Copy all generated headers
-          cp include/*.h $HOME/aarch64-sysroot/usr/include/ 2>/dev/null || true
+                  # Copy all generated headers
+                  cp include/*.h $HOME/aarch64-sysroot/usr/include/ 2>/dev/null || true
 
-          # Also check if there's a subdirectory
-          if [ -d "include/ncurses" ]; then
-            mkdir -p $HOME/aarch64-sysroot/usr/include/ncurses
-            cp include/ncurses/*.h $HOME/aarch64-sysroot/usr/include/ncurses/ 2>/dev/null || true
-          fi
+                  # Also check if there's a subdirectory
+                  if [ -d "include/ncurses" ]; then
+                    mkdir -p $HOME/aarch64-sysroot/usr/include/ncurses
+                    cp include/ncurses/*.h $HOME/aarch64-sysroot/usr/include/ncurses/ 2>/dev/null || true
+                  fi
 
-          # Create ncurses.h symlink (ncurses expects this)
-          ln -sf curses.h $HOME/aarch64-sysroot/usr/include/ncurses.h
+                  # Create ncurses.h symlink (ncurses expects this)
+                  ln -sf curses.h $HOME/aarch64-sysroot/usr/include/ncurses.h
 
-          # Verify headers were copied
-          echo "Headers in sysroot:"
-          ls -la $HOME/aarch64-sysroot/usr/include/ | grep -E '(curses|ncurses|term)' || echo "Warning: No ncurses headers found"
+                  # Verify headers were copied
+                  echo "Headers in sysroot:"
+                  ls -la $HOME/aarch64-sysroot/usr/include/ | grep -E '(curses|ncurses|term)' || echo "Warning: No ncurses headers found"
 
-          # Copy libraries (still in ncurses-6.2 directory)
-          echo "Available libraries:"
-          ls -la lib/
+                  # Copy libraries (still in ncurses-5.9 directory)
+                  echo "Available libraries:"
+                  ls -la lib/
 
-          cp -P lib/libncurses*.so* $HOME/aarch64-sysroot/usr/lib/ || true
-          cp -P lib/libncurses*.a $HOME/aarch64-sysroot/usr/lib/ || true
-          cp -P lib/libtinfo*.so* $HOME/aarch64-sysroot/usr/lib/ || true
-          cp -P lib/libtinfo*.a $HOME/aarch64-sysroot/usr/lib/ || true
+                  cp -P lib/libncurses*.so* $HOME/aarch64-sysroot/usr/lib/ || true
+                  cp -P lib/libncurses*.a $HOME/aarch64-sysroot/usr/lib/ || true
+                  cp -P lib/libtinfo*.so* $HOME/aarch64-sysroot/usr/lib/ || true
+                  cp -P lib/libtinfo*.a $HOME/aarch64-sysroot/usr/lib/ || true
 
-          # Create symlinks for non-wide version
-          cd $HOME/aarch64-sysroot/usr/lib
-          ln -sf libncursesw.so libncurses.so || true
-          ln -sf libncursesw.a libncurses.a || true
-          ln -sf libtinfow.so libtinfo.so || true
-          ln -sf libtinfow.a libtinfo.a || true
+                  # Create symlinks for non-wide version
+                  cd $HOME/aarch64-sysroot/usr/lib
+                  ln -sf libncursesw.so libncurses.so || true
+                  ln -sf libncursesw.a libncurses.a || true
+                  ln -sf libtinfow.so libtinfo.so || true
+                  ln -sf libtinfow.a libtinfo.a || true
 
-          # Verify libraries
-          echo "Built libraries in sysroot:"
-          ls -lh $HOME/aarch64-sysroot/usr/lib/libncurses* $HOME/aarch64-sysroot/usr/lib/libtinfo* || true
-          file $HOME/aarch64-sysroot/usr/lib/libncurses*.so* || true
+                  # Verify libraries
+                  echo "Built libraries in sysroot:"
+                  ls -lh $HOME/aarch64-sysroot/usr/lib/libncurses* $HOME/aarch64-sysroot/usr/lib/libtinfo* || true
+                  file $HOME/aarch64-sysroot/usr/lib/libncurses*.so* || true
 
-          echo "ARM64 sysroot with ncurses 6.2 (with tinfo) created at $HOME/aarch64-sysroot"
+                  echo "ARM64 sysroot with ncurses 5.9 (with tinfo) created at $HOME/aarch64-sysroot"
 
-      - name: Build for ZynqMP (ARM64 cross-compile)
-        run: |
-          set -e
+            - name: Build for ZynqMP (ARM64 cross-compile)
+              run: |
+                  set -e
 
-          # Set sysroot environment variable for toolchain file
-          export ZYNQMP_SYSROOT=$HOME/aarch64-sysroot
+                  # Set sysroot environment variable for toolchain file
+                  export ZYNQMP_SYSROOT=$HOME/aarch64-sysroot
 
-          echo "Using ZynqMP sysroot: $ZYNQMP_SYSROOT"
-          echo "Toolchain file: ${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake"
+                  echo "Using ZynqMP sysroot: $ZYNQMP_SYSROOT"
+                  echo "Toolchain file: ${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake"
 
-          # Create build directory
-          rm -rf build_zynqmp
-          mkdir -p build_zynqmp
-          cd build_zynqmp
+                  # Create build directory
+                  rm -rf build_zynqmp
+                  mkdir -p build_zynqmp
+                  cd build_zynqmp
 
-          # Configure with ZynqMP toolchain file
-          cmake \
-            -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCURSES_INCLUDE_PATH=$ZYNQMP_SYSROOT/usr/include \
-            -DCURSES_LIBRARY=$ZYNQMP_SYSROOT/usr/lib/libncurses.so \
-            -DXLNPWMON_BUILD_PYTHON_BINDINGS=OFF \
-            -DXLNPWMON_BUILD_CPP_BINDINGS=ON \
-            -DXLNPWMON_BUILD_CLI=ON \
-            -DXLNPWMON_BUILD_TESTS=OFF \
-            -DXLNPWMON_USE_EIGEN=OFF \
-            -DXLNPWMON_BUILD_EXAMPLES=OFF \
-            ..
+                  # Configure with ZynqMP toolchain file
+                  cmake \
+                    -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/.github/toolchain-zynqmp.cmake \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DCURSES_INCLUDE_PATH=$ZYNQMP_SYSROOT/usr/include \
+                    -DCURSES_LIBRARY=$ZYNQMP_SYSROOT/usr/lib/libncurses.so \
+                    -DXLNPWMON_BUILD_PYTHON_BINDINGS=OFF \
+                    -DXLNPWMON_BUILD_CPP_BINDINGS=ON \
+                    -DXLNPWMON_BUILD_CLI=ON \
+                    -DXLNPWMON_BUILD_TESTS=OFF \
+                    -DXLNPWMON_USE_EIGEN=OFF \
+                    -DXLNPWMON_BUILD_EXAMPLES=OFF \
+                    ..
 
-          # Build
-          echo "Building for PetaLinux ZynqMP (ARM64)..."
-          make -j$(nproc) VERBOSE=1
+                  # Build
+                  echo "Building for PetaLinux ZynqMP (ARM64)..."
+                  make -j$(nproc) VERBOSE=1
 
-          # Verify architecture of built binaries
-          echo "Verifying binary architecture..."
-          file xilinx-power-ctl/xilinx_power_ctl || true
+                  # Verify architecture of built binaries
+                  echo "Verifying binary architecture..."
+                  file xilinx-power-ctl/xilinx_power_ctl || true
 
-          # Package as RPM
-          cpack -G RPM
+                  # Package as RPM
+                  cpack -G RPM
 
-      - name: Rename package
-        run: |
-          cd build_zynqmp
-          for pkg in *.rpm; do
-            new_name=$(echo $pkg | sed "s/.rpm/_petalinux-zynqmp-aarch64.rpm/")
-            mv "$pkg" "$new_name"
-            echo "Created package: $new_name"
-          done
+            - name: Rename package
+              run: |
+                  cd build_zynqmp
+                  for pkg in *.rpm; do
+                    new_name=$(echo $pkg | sed "s/.rpm/_petalinux-zynqmp-aarch64.rpm/")
+                    mv "$pkg" "$new_name"
+                    echo "Created package: $new_name"
+                  done
 
-      - name: Create binary distribution tarball
-        run: |
-          set -e
+            - name: Create binary distribution tarball
+              run: |
+                  set -e
 
-          # Create distribution directory
-          DIST_DIR="xlnpwmon-zynqmp-binary"
-          mkdir -p $DIST_DIR
+                  # Create distribution directory
+                  DIST_DIR="xlnpwmon-zynqmp-binary"
+                  mkdir -p $DIST_DIR
 
-          # Copy source files
-          cp -r include $DIST_DIR/
-          cp -r src $DIST_DIR/
-          cp -r example $DIST_DIR/
-          cp README.md $DIST_DIR/
-          cp README_CN.md $DIST_DIR/ || true
-          cp LICENSE $DIST_DIR/ || true
-          cp INSTALL.txt $DIST_DIR/
-          cp scripts/install_from_tarball.sh $DIST_DIR/ || true
+                  # Copy source files
+                  cp -r include $DIST_DIR/
+                  cp -r src $DIST_DIR/
+                  cp -r example $DIST_DIR/
+                  cp README.md $DIST_DIR/
+                  cp README_CN.md $DIST_DIR/ || true
+                  cp LICENSE $DIST_DIR/ || true
+                  cp INSTALL.txt $DIST_DIR/
+                  cp scripts/install_from_tarball.sh $DIST_DIR/ || true
 
-          # Copy compiled binaries and libraries
-          mkdir -p $DIST_DIR/bin
-          mkdir -p $DIST_DIR/lib
+                  # Copy compiled binaries and libraries
+                  mkdir -p $DIST_DIR/bin
+                  mkdir -p $DIST_DIR/lib
 
-          # Copy CLI binary
-          if [ -f build_zynqmp/xlnpwmon_cli ]; then
-            cp build_zynqmp/xlnpwmon_cli $DIST_DIR/bin/
-          fi
+                  # Copy CLI binary
+                  if [ -f build_zynqmp/xlnpwmon_cli ]; then
+                    cp build_zynqmp/xlnpwmon_cli $DIST_DIR/bin/
+                  fi
 
-          # Copy libraries (both shared and static)
-          # C libraries
-          cp build_zynqmp/libxlnpwmon.so $DIST_DIR/lib/ 2>/dev/null || true
-          cp build_zynqmp/libxlnpwmon_static.a $DIST_DIR/lib/ 2>/dev/null || true
-          # C++ libraries
-          cp build_zynqmp/libxlnpwmon_cpp.so $DIST_DIR/lib/ 2>/dev/null || true
-          cp build_zynqmp/libxlnpwmon_static_cpp.a $DIST_DIR/lib/ 2>/dev/null || true
+                  # Copy libraries (both shared and static)
+                  # C libraries
+                  cp build_zynqmp/libxlnpwmon.so $DIST_DIR/lib/ 2>/dev/null || true
+                  cp build_zynqmp/libxlnpwmon_static.a $DIST_DIR/lib/ 2>/dev/null || true
+                  # C++ libraries
+                  cp build_zynqmp/libxlnpwmon_cpp.so $DIST_DIR/lib/ 2>/dev/null || true
+                  cp build_zynqmp/libxlnpwmon_static_cpp.a $DIST_DIR/lib/ 2>/dev/null || true
 
-          # Copy pkg-config files
-          mkdir -p $DIST_DIR/lib/pkgconfig
-          if [ -f build_zynqmp/xlnpwmon.pc ]; then
-            cp build_zynqmp/xlnpwmon.pc $DIST_DIR/lib/pkgconfig/
-          fi
+                  # Copy pkg-config files
+                  mkdir -p $DIST_DIR/lib/pkgconfig
+                  if [ -f build_zynqmp/xlnpwmon.pc ]; then
+                    cp build_zynqmp/xlnpwmon.pc $DIST_DIR/lib/pkgconfig/
+                  fi
 
-          # Copy CMake configuration files
-          mkdir -p $DIST_DIR/lib/cmake/xlnpwmon
-          if [ -d build_zynqmp/cmake ]; then
-            cp -r build_zynqmp/cmake/* $DIST_DIR/lib/cmake/xlnpwmon/ 2>/dev/null || true
-          fi
-          # Also check for CMake files in build root
-          for cmake_file in xlnpwmonConfig.cmake xlnpwmonConfigVersion.cmake xlnpwmonTargets.cmake xlnpwmonTargets-release.cmake; do
-            if [ -f build_zynqmp/$cmake_file ]; then
-              cp build_zynqmp/$cmake_file $DIST_DIR/lib/cmake/xlnpwmon/
-            fi
-          done
+                  # Copy CMake configuration files
+                  mkdir -p $DIST_DIR/lib/cmake/xlnpwmon
+                  if [ -d build_zynqmp/cmake ]; then
+                    cp -r build_zynqmp/cmake/* $DIST_DIR/lib/cmake/xlnpwmon/ 2>/dev/null || true
+                  fi
+                  # Also check for CMake files in build root
+                  for cmake_file in xlnpwmonConfig.cmake xlnpwmonConfigVersion.cmake xlnpwmonTargets.cmake xlnpwmonTargets-release.cmake; do
+                    if [ -f build_zynqmp/$cmake_file ]; then
+                      cp build_zynqmp/$cmake_file $DIST_DIR/lib/cmake/xlnpwmon/
+                    fi
+                  done
 
-          # Create tarball with version info
-          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-          TARBALL_NAME="xlnpwmon-${VERSION}-zynqmp-aarch64.tar.gz"
-          tar czf $TARBALL_NAME $DIST_DIR
+                  # Create tarball with version info
+                  VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+                  TARBALL_NAME="xlnpwmon-${VERSION}-zynqmp-aarch64.tar.gz"
+                  tar czf $TARBALL_NAME $DIST_DIR
 
-          echo "Created tarball: $TARBALL_NAME"
-          ls -lh $TARBALL_NAME
+                  echo "Created tarball: $TARBALL_NAME"
+                  ls -lh $TARBALL_NAME
 
-          # Move to build directory for easier artifact collection
-          mv $TARBALL_NAME build_zynqmp/
+                  # Move to build directory for easier artifact collection
+                  mv $TARBALL_NAME build_zynqmp/
 
-      - name: Upload RPM package
-        uses: actions/upload-artifact@v4
-        with:
-          name: rpm-package-zynqmp
-          path: build_zynqmp/*.rpm
-          if-no-files-found: error
+            - name: Upload RPM package
+              uses: actions/upload-artifact@v4
+              with:
+                  name: rpm-package-zynqmp
+                  path: build_zynqmp/*.rpm
+                  if-no-files-found: error
 
-      - name: Upload binary tarball
-        uses: actions/upload-artifact@v4
-        with:
-          name: binary-tarball-zynqmp
-          path: build_zynqmp/*.tar.gz
-          if-no-files-found: error
+            - name: Upload binary tarball
+              uses: actions/upload-artifact@v4
+              with:
+                  name: binary-tarball-zynqmp
+                  path: build_zynqmp/*.tar.gz
+                  if-no-files-found: error
 
-  release_package:
-    name: Release ZynqMP Packages
-    needs: build_zynqmp_rpm
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download RPM artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: rpm-package-zynqmp
-          path: packages
+    release_package:
+        name: Release ZynqMP Packages
+        needs: build_zynqmp_rpm
+        if: startsWith(github.ref, 'refs/tags/v')
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Download RPM artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: rpm-package-zynqmp
+                  path: packages
 
-      - name: Download tarball artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: binary-tarball-zynqmp
-          path: packages
+            - name: Download tarball artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: binary-tarball-zynqmp
+                  path: packages
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: packages/*
+            - name: Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: packages/*
